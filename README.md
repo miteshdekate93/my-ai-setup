@@ -1,145 +1,170 @@
-# my-claude-setup
+# My AI Setup
 
-One-command setup to restore your full Claude Code configuration on any new machine.
-
-Installs:
-- `~/.claude/settings.json` — voice, ECC marketplace, plugins
-- `~/.claude/rules/` — 13 rule files (agents, coding style, git workflow, testing, security, caveman, archon, memory-crystallization, context-budget)
-- `~/.claude/commands/task.md` — `/task` slash command (full autonomous pipeline)
-- `~/.claude/memory/L3/` — SOP memory directory (fills up as you use `/task`)
-- `CLAUDE.md` — project workflow instructions (written to current directory)
-- `tasks/todo.md` and `tasks/lessons.md` — task tracking files (written to current directory)
-- Archon CLI — automatic workflow engine for implement/fix/build tasks
-- `~/.archon/config.yaml` — Archon config pointing to Claude binary
+One-command setup for **Claude Code** and **OpenAI Codex CLI** — restores all rules, workflows, commands, and memory on any new machine in seconds.
 
 ---
 
-## After Running setup.sh: One-Time Auth (optional but recommended)
+## Structure
 
-`setup.sh` does not require GitHub auth. But for full automation (auto push + PR creation), run once after setup:
+```
+my-ai-setup/
+├── claude/
+│   ├── setup.sh        macOS / Linux
+│   ├── setup.ps1       Windows (PowerShell)
+│   └── README.md       Claude-specific guide
+├── codex/
+│   ├── setup.sh        macOS / Linux
+│   ├── setup.ps1       Windows (PowerShell)
+│   └── README.md       Codex-specific guide
+└── README.md           this file
+```
+
+---
+
+## Quick Start
+
+### Claude Code — macOS/Linux
+```bash
+bash claude/setup.sh
+```
+
+### Claude Code — Windows
+```powershell
+Set-ExecutionPolicy RemoteSigned -Scope CurrentUser   # one-time
+.\claude\setup.ps1
+```
+
+### OpenAI Codex CLI — macOS/Linux
+```bash
+bash codex/setup.sh
+```
+
+### OpenAI Codex CLI — Windows
+```powershell
+.\codex\setup.ps1
+```
+
+---
+
+## What Each Setup Installs
+
+| What | Claude Code | Codex CLI |
+|------|------------|-----------|
+| Global config | `~/.claude/settings.json` | `~/.codex/config.toml` |
+| Global rules/instructions | `~/.claude/rules/*.md` | `~/.codex/AGENTS.md` |
+| Project instructions | `CLAUDE.md` | `AGENTS.md` |
+| Full pipeline command | `/task` (slash command) | `codex-task` (CLI script) |
+| Planning command | `/plan` (ECC skill) | `codex-plan` |
+| TDD command | `/tdd` (ECC skill) | `codex-tdd` |
+| Code review command | `/code-review` (ECC skill) | `codex-review` |
+| Security scan command | `/security-scan` (ECC skill) | `codex-security` |
+| Memory (L3 SOPs) | `~/.claude/memory/L3/` | `~/.codex/memory/L3/` |
+| Workflow engine | Archon CLI (auto-dispatched) | built-in 8-phase pipeline |
+
+---
+
+## 10x Speed Tactics — Both Tools
+
+### 1. One-command pipeline
+
+Instead of manually planning, branching, writing tests, implementing, reviewing, and pushing:
 
 ```bash
+# Claude Code
+/task "implement JWT authentication"
+
+# Codex CLI
+codex-task "implement JWT authentication"
+```
+
+Both tools auto-detect your stack, create a branch, write failing tests, implement, review, security-scan, then output git push commands (or push automatically if GitHub is authenticated).
+
+### 2. Plan before every feature (saves rework)
+
+```bash
+/plan "add rate limiting to the API"       # Claude
+codex-plan "add rate limiting to the API"  # Codex
+```
+
+5 minutes of planning prevents 2 hours of rework.
+
+### 3. TDD — tests force clarity
+
+```bash
+/tdd "user can only delete their own posts"   # Claude
+codex-tdd "user can only delete their own posts"  # Codex
+```
+
+Writing tests first exposes ambiguity before you write code.
+
+### 4. L3 Memory — never solve the same problem twice
+
+Every `/task` or `codex-task` crystallizes a reusable SOP in `~/.*/memory/L3/`.
+On the next similar task it's recalled automatically — skips cold-start reasoning.
+
+```
+First JWT task:    normal speed
+Second JWT task:   2-3x faster (SOP recalled)
+Tenth JWT task:    5x faster (proven pattern + gotchas memorized)
+```
+
+### 5. Caveman mode — 65% fewer output tokens (Claude only)
+
+Always active. Drops filler, articles, hedging — keeps full technical accuracy.
+Faster responses, longer sessions before context limit.
+
+### 6. Model routing
+
+| Task | Claude model | Codex model |
+|------|-------------|-------------|
+| Simple fix, single file | Haiku 4.5 | gpt-4.1-mini |
+| Main development work | Sonnet 4.6 (default) | gpt-4.1 (default) |
+| Complex architecture / deep reasoning | Opus 4.5 | o3 |
+
+Switch mid-session:
+- Claude: `/model claude-haiku-4-5` or `/model claude-opus-4-5`
+- Codex: `/model gpt-4.1-mini` or `/model o3`
+
+---
+
+## New Project Checklist
+
+Run this once when starting any new project:
+
+```bash
+# 1. Clone / init repo
+git clone <repo> && cd <repo>
+
+# 2. Run setup for your tool (drops project instructions + tasks/)
+bash ~/path/to/my-ai-setup/claude/setup.sh    # → writes CLAUDE.md
+bash ~/path/to/my-ai-setup/codex/setup.sh     # → writes AGENTS.md
+
+# 3. (Claude only) Index codebase with GitNexus for deep code intelligence
+/gitnexus-init
+
+# 4. Optional: authenticate GitHub for auto-push + auto-PR
 gh auth login
-# Choose: GitHub.com → HTTPS → Login with a web browser
+
+# 5. Start building
+/task "implement <first feature>"           # Claude
+codex-task "implement <first feature>"      # Codex
 ```
-
-**Without `gh auth login`:** `/task` still does all code work — plans, creates a local branch, writes tests, implements, reviews. At the end it outputs the exact git commands to push and create the PR manually.
-
-**With `gh auth login`:** `/task` dispatches to Archon which handles push + PR creation autonomously.
 
 ---
 
-## How To Use
+## Requirements
 
-### On Mac/Linux
-
-```bash
-bash setup.sh
-```
-
-### On Windows
-
-1. Open PowerShell as Administrator
-2. Allow local scripts to run (one-time):
-   ```powershell
-   Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
-   ```
-3. Run the setup:
-   ```powershell
-   .\setup.ps1
-   ```
-
-After running either script, restart Claude Code.
+| Tool | Install |
+|------|---------|
+| Claude Code | `npm install -g @anthropic-ai/claude-code` |
+| Codex CLI | `npm install -g @openai/codex` |
+| GitHub CLI | `brew install gh` (optional — enables auto-push + PR) |
+| Archon CLI | auto-installed by `claude/setup.sh` |
+| Node.js 18+ | required for both CLIs |
 
 ---
 
-## What Gets Created
+## Detailed Guides
 
-| Path | Description |
-|------|-------------|
-| `~/.claude/settings.json` | Global Claude Code settings |
-| `~/.claude/rules/agents.md` | Agent orchestration rules |
-| `~/.claude/rules/coding-style.md` | Immutability, file org, error handling |
-| `~/.claude/rules/development-workflow.md` | Research → plan → TDD → review pipeline |
-| `~/.claude/rules/git-workflow.md` | Commit format and PR process |
-| `~/.claude/rules/hooks.md` | Hook types and TodoWrite practices |
-| `~/.claude/rules/patterns.md` | Repository pattern, API response format |
-| `~/.claude/rules/performance.md` | Model selection, context window, plan mode |
-| `~/.claude/rules/security.md` | Security checklist and response protocol |
-| `~/.claude/rules/testing.md` | TDD workflow, 80% coverage requirement |
-| `~/.claude/rules/caveman.md` | Always-on token compression + hedge reducer (~65% fewer tokens) |
-| `~/.claude/rules/archon.md` | Auto-dispatch implement/fix/build requests to Archon workflows |
-| `~/.claude/rules/memory-crystallization.md` | L3 SOP memory: search before tasks, crystallize after — skip cold-start reasoning |
-| `~/.claude/rules/context-budget.md` | Token efficiency: batch tool calls, compress old results, trim triggers |
-| `~/.claude/commands/task.md` | `/task` — full pipeline: stack detect → L3 recall → plan → TDD → implement → review → security → SOP |
-| `~/.claude/memory/L3/` | SOP memory store — grows with every non-trivial task |
-| `~/.archon/config.yaml` | Archon config pointing to Claude binary |
-| `./CLAUDE.md` | Project-level workflow instructions |
-| `./tasks/todo.md` | Task tracking |
-| `./tasks/lessons.md` | Lessons learned log |
-
----
-
-## How It Works
-
-### Token Compression (Caveman + Hedge Reducer — always on)
-
-Every Claude response is automatically compressed ~65% by dropping filler words, articles, and pleasantries while keeping full technical accuracy. Code, commits, and PRs are written normally — only prose is compressed. Longer sessions, lower cost, faster responses.
-
-The **hedge reducer** strips an additional layer: "I think", "maybe", "it seems", "perhaps", "you might want to", "certainly" — all replaced with direct assertions. ~15% additional output token savings.
-
-Switch modes with `/caveman lite`, `/caveman full`, `/caveman ultra`. Stop with "normal mode".
-
-### L3 SOP Memory (grows over time)
-
-Every non-trivial `/task` saves a reusable SOP to `~/.claude/memory/L3/`. On the next similar task, Claude recalls the SOP instead of cold-reasoning from scratch.
-
-**First task:** normal speed. **10th similar task:** 2-3x faster, proven pattern reused.
-
-SOPs accumulate: `node-jwt-auth.md`, `go-grpc-service.md`, `python-db-migration.md`, etc.
-
-### Context Budget (6x token efficiency)
-
-Rules inspired by GenericAgent's architecture:
-- Batch all independent tool calls in one message (parallel execution)
-- Never re-read files already in context
-- Compress old tool results instead of quoting verbatim
-- Spawn subagents when context exceeds 10 turns of heavy work
-
-### `/task` — One Command for Everything
-
-```
-/task implement user authentication with JWT
-/task fix bug in the payment module
-/task refactor the database layer to use repository pattern
-/task fix issue #42
-/task review PR #17
-```
-
-`/task` auto-detects your project stack (Node, Go, Rust, Python, Kotlin, Flutter) and classifies the request to route automatically:
-
-| Request type | What happens |
-|-------------|-------------|
-| New feature / implement / build | Archon `archon-piv-loop` dispatched in background → creates PR |
-| Fix bug / fix issue #N | Archon `archon-fix-github-issue` dispatched in background → creates PR |
-| Review PR #N | Archon `archon-smart-pr-review` dispatched in background |
-| Refactor / simple fix | Inline: plan → TDD → implement → code-review → security check |
-| Question / explain | Answered directly, no pipeline |
-
----
-
-### Auto Workflow Engine (Archon)
-
-When you say "implement X", "fix bug in Y", or "refactor Z", Claude automatically:
-1. Detects the intent
-2. Selects the right Archon workflow (idea-to-pr, fix-issue, refactor-safely, etc.)
-3. Runs it in an isolated git worktree in the background
-4. Reports back when done with a PR ready to merge
-
-No manual steps. Claude handles plan → implement → validate → PR autonomously.
-
-**Supported triggers:**
-- `"implement X"` / `"build X"` → `archon-idea-to-pr`
-- `"fix issue #N"` / `"fix bug in X"` → `archon-fix-github-issue`
-- `"refactor X"` → `archon-refactor-safely`
-- `"review PR #N"` → `archon-comprehensive-pr-review`
+- [Claude Code setup, skills, and workflow →](claude/README.md)
+- [Codex CLI setup, scripts, and workflow →](codex/README.md)
