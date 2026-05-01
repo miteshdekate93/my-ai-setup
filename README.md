@@ -59,6 +59,8 @@ bash codex/setup.sh
 | Code review command | `/code-review` (ECC skill) | `codex-review` |
 | Security scan command | `/security-scan` (ECC skill) | `codex-security` |
 | Memory (L3 SOPs) | `~/.claude/memory/L3/` | `~/.codex/memory/L3/` |
+| Cross-session memory | Stash MCP (`~/.stash/`) | Stash MCP (`~/.stash/`) |
+| Multi-agent / cache | WUPHF (`npx wuphf`) | WUPHF (with Claude Code) |
 | Workflow engine | Archon CLI (auto-dispatched) | built-in 8-phase pipeline |
 
 ---
@@ -97,7 +99,34 @@ codex-tdd "user can only delete their own posts"  # Codex
 
 Writing tests first exposes ambiguity before you write code.
 
-### 4. L3 Memory — never solve the same problem twice
+### 4. WUPHF — 97% cache hit rate, fresh context per agent
+
+WUPHF orchestrates multiple Claude Code agents with fresh sessions per turn — prevents the context accumulation that slows long tasks.
+
+| Metric | Single session | WUPHF |
+|--------|---------------|-------|
+| Tokens per turn | 484k accumulated | ~40k fresh |
+| Cache hit rate | varies | 97% |
+| Agent roles | one | CEO + PM + Engineer + Reviewer |
+
+```bash
+npx wuphf    # Claude Code only
+```
+
+Use when: long refactors, parallel planning + implementation, architecture reviews.
+
+### 5. Stash — persistent memory across sessions (no re-explaining)
+
+Stash is a self-hosted MCP server that remembers what Claude learned last session.
+
+```bash
+cd ~/.stash && docker compose up -d
+claude mcp add stash --sse http://localhost:8765/sse
+```
+
+Config is already at `~/.stash/docker-compose.yml`. Fill in `.env` with your API keys.
+
+### 6. L3 Memory — never solve the same problem twice
 
 Every `/task` or `codex-task` crystallizes a reusable SOP in `~/.*/memory/L3/`.
 On the next similar task it's recalled automatically — skips cold-start reasoning.
@@ -108,12 +137,12 @@ Second JWT task:   2-3x faster (SOP recalled)
 Tenth JWT task:    5x faster (proven pattern + gotchas memorized)
 ```
 
-### 5. Caveman mode — 65% fewer output tokens (Claude only)
+### 7. Caveman mode — 65% fewer output tokens (Claude only)
 
 Always active. Drops filler, articles, hedging — keeps full technical accuracy.
 Faster responses, longer sessions before context limit.
 
-### 6. Model routing
+### 8. Model routing
 
 | Task | Claude model | Codex model |
 |------|-------------|-------------|

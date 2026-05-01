@@ -97,6 +97,39 @@ Either way, all code work (branch, tests, implement, review) runs locally first.
 
 ---
 
+## WUPHF — Multi-Agent Orchestration
+
+WUPHF is primarily built for Claude Code, but the same pattern applies to Codex via parallel `codex exec` sessions.
+
+For Codex, the `codex-task` pipeline already handles multi-phase orchestration (plan → TDD → implement → review → security). Use WUPHF when you want a separate Claude Code session running alongside Codex — e.g. Claude handles architecture review while Codex implements.
+
+```bash
+npx wuphf    # starts multi-agent Claude Code session
+```
+
+---
+
+## Stash — Persistent Cross-Session Memory
+
+Stash gives your AI tools durable memory across sessions via an MCP server. Works with both Codex and Claude Code.
+
+### Setup
+
+```bash
+cd ~/.stash
+cp .env.example .env      # add OPENAI_API_KEY and ANTHROPIC_API_KEY
+docker compose up -d
+```
+
+Config is already at `~/.stash/docker-compose.yml` (written by setup.sh).
+
+For Codex, Stash memory can be queried by prepending context to prompts. For Claude Code, add the MCP server:
+```bash
+claude mcp add stash --sse http://localhost:8765/sse
+```
+
+---
+
 ## L3 Memory — Compound Speedup
 
 Every non-trivial `codex-task` saves a reusable SOP:

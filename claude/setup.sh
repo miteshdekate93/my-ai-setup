@@ -1141,6 +1141,94 @@ else
   echo "Warning: ECC commands not found at $ECC_COMMANDS (install ECC plugin first)"
 fi
 
+# ── WUPHF — multi-agent orchestration (97% cache hit rate) ──────────────────
+cat > "$HOME/.claude/rules/wuphf.md" << 'EOF'
+# WUPHF — Multi-Agent Orchestration
+
+WUPHF orchestrates multiple Claude Code agents with fresh sessions per turn,
+achieving 97% prompt cache hit rate and preventing context accumulation bloat.
+
+## Token savings mechanism
+
+- Fresh session per agent turn: ~40k tokens billed vs 484k accumulated context
+- 97% cache hit rate via Claude prompt caching
+- Per-agent tool scoping (fewer tools = fewer tokens in system prompt)
+
+## When to use
+
+Use for tasks that benefit from role separation:
+- Complex features needing planner + implementer + reviewer in parallel
+- Long refactors where main context gets heavy
+- Architecture decisions needing multi-perspective analysis
+
+## How to start
+
+```bash
+npx wuphf
+```
+
+Agents: CEO (coordinator), PM (requirements), Engineer (implementation), Reviewer (QA)
+
+## When NOT to use
+
+- Simple single-file fixes (inline is faster)
+- Quick Q&A / explanations
+- Tasks that /task handles in one phase
+EOF
+echo "WUPHF rule created: ~/.claude/rules/wuphf.md"
+
+# ── Stash — persistent cross-session memory (MCP server) ─────────────────────
+mkdir -p "$HOME/.stash"
+cat > "$HOME/.stash/docker-compose.yml" << 'EOF'
+services:
+  stash:
+    image: ghcr.io/alash3al/stash:latest
+    ports:
+      - "8765:8765"
+    environment:
+      - DATABASE_URL=postgresql://stash:stash@postgres:5432/stash?sslmode=disable
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      - POSTGRES_USER=stash
+      - POSTGRES_PASSWORD=stash
+      - POSTGRES_DB=stash
+    volumes:
+      - stash_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U stash"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  stash_data:
+EOF
+
+cat > "$HOME/.stash/.env.example" << 'EOF'
+OPENAI_API_KEY=sk-...
+ANTHROPIC_API_KEY=sk-ant-...
+EOF
+
+echo "Stash config created: ~/.stash/"
+echo "  → To start persistent memory: cd ~/.stash && cp .env.example .env"
+echo "    Fill in API keys, then: docker compose up -d"
+echo "    Then add MCP: claude mcp add stash --sse http://localhost:8765/sse"
+
+# Auto-add Stash MCP if already running
+if curl -sf http://localhost:8765/health &>/dev/null 2>&1; then
+  claude mcp add stash --sse http://localhost:8765/sse 2>/dev/null || true
+  echo "✓ Stash MCP detected and added to Claude Code"
+fi
+
 # ── GitHub auth check ────────────────────────────────────────────────────────
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

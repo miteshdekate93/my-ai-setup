@@ -667,6 +667,51 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "%USERPROFILE%\.local\bin\$c
 Write-Host ""
 Write-Host "================================================"
 Write-Host "Codex setup complete!"
+# ── WUPHF + Stash config for Codex users ─────────────────────────────────────
+$stashDir = "$env:USERPROFILE\.stash"
+New-Item -ItemType Directory -Force -Path $stashDir | Out-Null
+
+@'
+services:
+  stash:
+    image: ghcr.io/alash3al/stash:latest
+    ports:
+      - "8765:8765"
+    environment:
+      - DATABASE_URL=postgresql://stash:stash@postgres:5432/stash?sslmode=disable
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      - POSTGRES_USER=stash
+      - POSTGRES_PASSWORD=stash
+      - POSTGRES_DB=stash
+    volumes:
+      - stash_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U stash"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  stash_data:
+'@ | Set-Content -Encoding UTF8 "$stashDir\docker-compose.yml"
+
+@'
+OPENAI_API_KEY=sk-...
+ANTHROPIC_API_KEY=sk-ant-...
+'@ | Set-Content -Encoding UTF8 "$stashDir\.env.example"
+
+Write-Host "Stash config: $stashDir (run docker compose up -d for cross-session memory)"
+
 Write-Host ""
 Write-Host "Scripts installed to $localBin:"
 Write-Host "  codex-task `"<task>`"   -- full pipeline (plan->TDD->implement->review->security)"

@@ -138,6 +138,65 @@ curl -fsSL https://archon.diy/install | bash
 
 ---
 
+## WUPHF — Multi-Agent Orchestration (97% Cache Hit Rate)
+
+WUPHF runs multiple Claude Code agents with fresh sessions per turn. Prevents context bloat and maximises prompt cache hits.
+
+| Without WUPHF | With WUPHF |
+|--------------|-----------|
+| Single session accumulates 484k tokens | Fresh session per turn: ~40k tokens |
+| Cache hit rate varies | 97% cache hit rate |
+| One agent does everything | Planner + Implementer + Reviewer in parallel |
+
+### When to use
+
+- Long features where context gets heavy mid-task
+- Architecture decisions needing multiple perspectives
+- Anything where you'd normally open a fresh Claude session manually
+
+### How to start
+
+```bash
+npx wuphf
+```
+
+WUPHF reads your existing Claude Code CLI. Agents: CEO, PM, Engineer, Reviewer.
+
+### When NOT to use
+
+Simple fixes or questions — `/task` inline is faster for single-phase work.
+
+---
+
+## Stash — Persistent Cross-Session Memory
+
+Stash is an MCP server that gives Claude durable memory across sessions. Claude remembers what was debugged, what patterns worked, what was decided — no re-explaining every session.
+
+### How it works
+
+- 8-stage consolidation pipeline: raw observations → compressed facts → semantic memory
+- pgvector similarity search retrieves relevant memories per query
+- Self-hosted via Docker (no external service)
+
+### Setup
+
+```bash
+cd ~/.stash
+cp .env.example .env      # add ANTHROPIC_API_KEY
+docker compose up -d
+claude mcp add stash --sse http://localhost:8765/sse
+```
+
+Config is already at `~/.stash/docker-compose.yml` (written by setup.sh).
+
+### When to use
+
+- Projects that span multiple days / sessions
+- Debugging complex issues where context from yesterday matters
+- Any long-running refactor where patterns repeat
+
+---
+
 ## L3 Memory — Compound Speedup
 
 Every non-trivial `/task` saves a reusable SOP:

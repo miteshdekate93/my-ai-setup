@@ -732,6 +732,62 @@ if [ -n "$SHELL_RC" ] && ! grep -q '.local/bin' "$SHELL_RC" 2>/dev/null; then
   echo "Added ~/.local/bin to PATH in $SHELL_RC"
 fi
 
+# ── WUPHF — multi-agent orchestration (97% cache hit rate) ──────────────────
+# Codex users can use WUPHF as an orchestration layer across Codex + Claude sessions
+cat > "$HOME/.config/wuphf-codex-note.md" << 'EOF'
+# WUPHF with Codex
+
+WUPHF primarily targets Claude Code, but Codex users can benefit from the same
+multi-agent pattern by running parallel `codex exec` sessions with scoped prompts.
+
+For pure Codex multi-agent work, use the codex-task pipeline which handles
+stack detection, L3 recall, and phase orchestration automatically.
+
+To use WUPHF with Claude Code sessions alongside Codex:
+  npx wuphf
+EOF
+
+cat > "$HOME/.stash/docker-compose.yml" << 'EOF' 2>/dev/null || true
+services:
+  stash:
+    image: ghcr.io/alash3al/stash:latest
+    ports:
+      - "8765:8765"
+    environment:
+      - DATABASE_URL=postgresql://stash:stash@postgres:5432/stash?sslmode=disable
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      - POSTGRES_USER=stash
+      - POSTGRES_PASSWORD=stash
+      - POSTGRES_DB=stash
+    volumes:
+      - stash_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U stash"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  stash_data:
+EOF
+
+mkdir -p "$HOME/.stash"
+cat > "$HOME/.stash/.env.example" << 'EOF'
+OPENAI_API_KEY=sk-...
+ANTHROPIC_API_KEY=sk-ant-...
+EOF
+echo "Stash config: ~/.stash/ (start with docker compose up -d for cross-session memory)"
+
 # ── GitHub auth check ────────────────────────────────────────────────────────
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
