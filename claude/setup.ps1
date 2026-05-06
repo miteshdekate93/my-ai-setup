@@ -857,7 +857,7 @@ Archon runs in isolated git worktrees, handles plan -> implement -> validate -> 
 | "fix issue #N", "resolve issue" | `archon-fix-github-issue` | `fix/issue-{N}` |
 | "fix bug in X", "debug X" (needs investigation) | `archon-fix-github-issue` | `fix/{short-name}` |
 | "implement from plan", "execute this plan" | `archon-feature-development` | `feat/{short-name}` |
-| "refactor X" | `archon-refactor-safely` | `refactor/{short-name}` |
+| "refactor X" | `archon-assist` | `refactor/{short-name}` |
 | "review PR #N" | `archon-comprehensive-pr-review` | `review/pr-{N}` |
 | "create a PRD", "plan this feature" | `archon-interactive-prd` | `prd/{short-name}` |
 
@@ -889,7 +889,7 @@ User: "fix issue #42"
 -> `archon workflow run archon-fix-github-issue --branch fix/issue-42 "fix issue #42"`
 
 User: "refactor the auth module to use the repository pattern"
--> `archon workflow run archon-refactor-safely --branch refactor/auth-module "refactor the auth module to use the repository pattern"`
+-> `archon workflow run archon-assist --branch refactor/auth-module "refactor the auth module to use the repository pattern"`
 
 ## If Archon Not Installed
 

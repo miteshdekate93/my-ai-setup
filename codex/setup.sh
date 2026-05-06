@@ -75,6 +75,24 @@ Strip these from all prose — never say them:
 | "I'm happy to" / "I'd be glad to" / "Let me help you" | drop preamble |
 | "Great question" / "Excellent point" / "Good idea" | drop entirely |
 
+## Intensity
+
+Default: **full** (drop articles, fragments OK, short synonyms).
+
+Tell Codex to switch: "caveman lite" | "caveman full" | "caveman ultra"
+Tell Codex to stop: "normal mode"
+
+| Level | Behavior |
+|-------|----------|
+| lite | No filler/hedging. Keep articles + full sentences. Tight but readable. |
+| full | Drop articles, fragments OK, short synonyms. Classic caveman. |
+| ultra | Abbreviate (DB/auth/config/req/res/fn), strip conjunctions, arrows for causality (X → Y). |
+
+## Auto-Clarity
+
+Drop caveman for: security warnings, irreversible action confirmations, multi-step sequences
+where fragment order risks misread. Resume after.
+
 Code/commits/PRs: write normal. Only prose is compressed.
 
 ---
@@ -238,6 +256,28 @@ Before ANY commit:
 - Research and analysis
 
 Switch mid-session: `/model gpt-4.1-mini` or `/model o3`
+
+## Reasoning Strategy
+
+Combine model selection with structured thinking for complex tasks:
+
+**gpt-4.1 + explicit plan prompt:**
+- Task has 3+ interdependent steps
+- Multi-file changes with dependencies
+- Debugging a known but complex issue
+
+**o3 (switch with `/model o3`):**
+- Root cause unclear after first analysis
+- Architecture decisions with competing trade-offs
+- Algorithm correctness must be verified
+- Estimating impact of a large refactor
+
+**Pattern for complex tasks:**
+1. `codex-plan "task"` with gpt-4.1 → get numbered breakdown
+2. Switch to o3 for the hardest decision: `/model o3`
+3. Switch back for implementation: `/model gpt-4.1`
+
+Never use o3 for simple fixes — cost is 10x gpt-4.1-mini.
 
 ---
 
@@ -531,19 +571,27 @@ if command -v gh &>/dev/null && gh auth status &>/dev/null 2>&1; then
   GH_STATUS="GH_AUTHED"
 fi
 
-# Search L3 memory for relevant SOPs
+# Search L3 memory and load SOP content if found
 KEYWORD=$(echo "$TASK" | awk '{print $1}' | tr '[:upper:]' '[:lower:]')
-SOP_HINT=""
+SOP_BLOCK=""
 if ls ~/.codex/memory/L3/ 2>/dev/null | grep -qi "$KEYWORD"; then
   SOP_FILE=$(ls ~/.codex/memory/L3/ | grep -i "$KEYWORD" | head -1)
-  SOP_HINT="Relevant SOP found: ~/.codex/memory/L3/$SOP_FILE — read it and use as starting pattern."
+  SOP_CONTENT=$(cat "$HOME/.codex/memory/L3/$SOP_FILE" 2>/dev/null || echo "")
+  if [ -n "$SOP_CONTENT" ]; then
+    SOP_BLOCK="## Recalled SOP from memory: $SOP_FILE
+
+$SOP_CONTENT
+
+Use the steps and gotchas above as your starting pattern. Skip cold reasoning for anything already documented there.
+"
+  fi
 fi
 
 PIPELINE_PROMPT="Execute the full development pipeline autonomously for this task: $TASK
 
 Stack detected: $STACK
 GitHub auth: $GH_STATUS
-$SOP_HINT
+${SOP_BLOCK}
 
 Follow ALL phases below without asking for confirmation between them:
 
