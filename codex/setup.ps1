@@ -131,6 +131,22 @@ ALWAYS validate at system boundaries:
 - Fail fast with clear error messages
 - Never trust external data (API responses, user input, file content)
 
+## Linear Control Flow
+
+Prefer linear, top-to-bottom flow in functions:
+- Use early returns instead of deeply nested conditionals
+- Flatten async chains with async/await — no callbacks inside callbacks
+- Side effects explicit and visible, not hidden inside branches
+- One level of indirection per function
+
+## Regenerability
+
+Files should be independently rewritable without breaking other modules:
+- Avoid hidden coupling — changes to one module shouldn't cascade to 5 others
+- Define clear interfaces between modules
+- No circular dependencies
+- If a file can't be rewritten in isolation, extract its public contract first
+
 ## Code Quality Checklist
 
 Before marking work complete:
@@ -141,6 +157,8 @@ Before marking work complete:
 - [ ] Proper error handling
 - [ ] No hardcoded values (use constants or config)
 - [ ] No mutation (immutable patterns used)
+- [ ] Linear control flow (early returns over nesting)
+- [ ] No circular dependencies
 
 ---
 
@@ -290,11 +308,28 @@ Never use o3 for simple fixes — cost is 10x gpt-4.1-mini.
 
 ---
 
-# Memory Crystallization (L3 Skill SOPs)
+# Memory Crystallization — Three-Tier Architecture
 
-Proven task solutions saved as SOPs — recall on similar tasks to skip cold-start reasoning.
+Three memory tiers: entity facts (L2), reusable SOPs (L3). L1 = session context (conversation only).
 
-## At Task Start — Search L3 Memory
+| Tier | What | Location |
+|------|------|----------|
+| L2 | Entity facts: systems, decisions, people, services | ~/.codex/memory/L2/ |
+| L3 | Skill SOPs: proven task patterns per stack/domain | ~/.codex/memory/L3/ |
+
+## L2 Entity Memory (POLE+O)
+
+Save durable facts about project entities:
+- Person — roles, preferences ("Alice owns auth module")
+- Object — systems, configs ("payments uses Stripe v3")
+- Location — repos, environments, paths
+- Event — decisions, incidents, migrations
+- Organization — teams, external services
+
+Save to ~/.codex/memory/L2/<project>-<entity-type>-<slug>.md
+Update (don't duplicate) when facts change.
+
+## L3 SOP Memory — At Task Start
 
 ```powershell
 Get-ChildItem "$env:USERPROFILE\.codex\memory\L3\" -ErrorAction SilentlyContinue | Where-Object Name -match "<keyword>"
@@ -302,16 +337,15 @@ Get-ChildItem "$env:USERPROFILE\.codex\memory\L3\" -ErrorAction SilentlyContinue
 
 If SOP found: read it, use as starting pattern, skip cold reasoning.
 
-## At Task End — Crystallize New SOP
+## L3 SOP Memory — At Task End
 
 After completing any non-trivial task (3+ implementation steps):
 1. Distill what worked into a reusable SOP
-2. Save to `~/.codex/memory/L3/<stack>-<domain>-<slug>.md`
+2. Save to ~/.codex/memory/L3/<stack>-<domain>-<slug>.md
 3. Keep short — steps + gotchas only, under 30 lines
 
-## SOP Format
+## SOP Format (L3)
 
-```markdown
 # SOP: <domain> — <what this covers>
 Stack: <language/framework>
 Last used: <YYYY-MM-DD>
@@ -321,7 +355,16 @@ Last used: <YYYY-MM-DD>
 
 ## Gotchas
 - ...
-```
+
+## Entity Fact Format (L2)
+
+# Entity: <name>
+Type: Person | Object | Location | Event | Organization
+Project: <project or "global">
+Observed: <YYYY-MM-DD>
+
+## Facts
+- ...
 
 ---
 
@@ -333,6 +376,15 @@ Encapsulate data access behind a consistent interface:
 - Define standard operations: findAll, findById, create, update, delete
 - Business logic depends on the abstract interface, not the storage mechanism
 - Enables easy swapping of data sources and simplifies testing with mocks
+
+## Vertical Slice Architecture (VSA)
+
+Organize code by feature slice, not by technical layer:
+- Each feature lives in one folder: request + handler + response + tests
+- NO: `controllers/UserController`, `services/UserService`, `repos/UserRepo`
+- YES: `features/CreateUser/handler`, `features/CreateUser/request`, `features/CreateUser/tests`
+- Benefits: changes to one feature touch one folder; no cross-layer coupling
+- Use for APIs with distinct, high-cohesion operations (CQRS-friendly)
 
 ## API Response Format
 
@@ -498,9 +550,10 @@ Track patterns and corrections here to avoid repeating mistakes.
 
 '@ | Set-Content -Encoding UTF8 "$PWD\tasks\lessons.md"
 
-# ── L3 memory directory ───────────────────────────────────────────────────────
+# ── L2 + L3 memory directories ────────────────────────────────────────────────
+New-Item -ItemType Directory -Force -Path "$codexDir\memory\L2" | Out-Null
 New-Item -ItemType Directory -Force -Path "$codexDir\memory\L3" | Out-Null
-Write-Host "L3 memory directory created: $codexDir\memory\L3"
+Write-Host "Memory directories created: $codexDir\memory\L2 and $codexDir\memory\L3"
 
 # ── Helper scripts to $env:USERPROFILE\.local\bin\ ────────────────────────────
 $localBin = "$env:USERPROFILE\.local\bin"

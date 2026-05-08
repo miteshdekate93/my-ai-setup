@@ -62,6 +62,27 @@ Launch 3 agents in parallel:
 First agent 1, then agent 2, then agent 3
 ```
 
+## Parallelization Decision Rules
+
+Run in parallel when:
+- Tasks touch different files
+- Tasks operate in different domains (auth vs UI vs DB)
+- No data dependencies between tasks
+
+Run sequentially when:
+- Task B depends on Task A output
+- Tasks modify the same file
+- Design/approval required before implementation
+
+## Outcome-Based Delegation
+
+Describe WHAT needs accomplishment (outcome), not HOW to do it:
+- YES: "Fix the infinite loop error in SideMenu"
+- YES: "Add a settings panel for the chat interface"
+- NO: "Fix by wrapping the selector with useShallow"
+
+Agents make better decisions with outcome context, not prescribed steps.
+
 ## Multi-Perspective Analysis
 
 For complex problems, use split role sub-agents:
@@ -111,6 +132,22 @@ ALWAYS validate at system boundaries:
 - Fail fast with clear error messages
 - Never trust external data (API responses, user input, file content)
 
+## Linear Control Flow
+
+Prefer linear, top-to-bottom flow in functions:
+- Use early returns instead of deeply nested conditionals
+- Flatten async chains with async/await — no callbacks inside callbacks
+- Side effects explicit and visible, not hidden inside branches
+- One level of indirection per function
+
+## Regenerability
+
+Files should be independently rewritable without breaking other modules:
+- Avoid hidden coupling — changes to one module shouldn't cascade to 5 others
+- Define clear interfaces between modules
+- No circular dependencies
+- If a file can't be rewritten in isolation, extract its public contract first
+
 ## Code Quality Checklist
 
 Before marking work complete:
@@ -121,6 +158,8 @@ Before marking work complete:
 - [ ] Proper error handling
 - [ ] No hardcoded values (use constants or config)
 - [ ] No mutation (immutable patterns used)
+- [ ] Linear control flow (early returns over nesting)
+- [ ] No circular dependencies
 '@ | Set-Content -Encoding UTF8 "$rulesDir\coding-style.md"
 
 @'
@@ -248,6 +287,15 @@ Encapsulate data access behind a consistent interface:
 - Concrete implementations handle storage details (database, API, file, etc.)
 - Business logic depends on the abstract interface, not the storage mechanism
 - Enables easy swapping of data sources and simplifies testing with mocks
+
+### Vertical Slice Architecture (VSA)
+
+Organize code by feature slice, not by technical layer:
+- Each feature lives in one folder: request + handler + response + tests
+- NO: `controllers/UserController`, `services/UserService`, `repos/UserRepo`
+- YES: `features/CreateUser/handler`, `features/CreateUser/request`, `features/CreateUser/tests`
+- Benefits: changes to one feature touch one folder; no cross-layer coupling
+- Use for APIs with distinct, high-cohesion operations (CQRS-friendly)
 
 ### API Response Format
 
@@ -381,51 +429,78 @@ MANDATORY workflow:
 '@ | Set-Content -Encoding UTF8 "$rulesDir\testing.md"
 
 @'
-# Memory Crystallization (L3 Skill SOPs)
+# Memory Crystallization — Three-Tier Architecture
 
-Inspired by GenericAgent's self-crystallization pattern: proven task solutions saved as SOPs,
-recalled on similar tasks to skip cold-start reasoning. Compound savings after ~10 tasks.
+Inspired by GenericAgent's self-crystallization pattern and graph-based agent memory research.
+Three memory tiers: session facts (L1), entity knowledge (L2), reusable SOPs (L3).
 
-## At Task Start — Search L3 Memory
+## Memory Tiers
+
+| Tier | What | Lifespan | Location |
+|------|------|----------|----------|
+| L1 | Session context: decisions, observations, current state | Session | Conversation only (not persisted) |
+| L2 | Entity facts: people, systems, repos, decisions, preferences | Long-term | ~/.claude/memory/L2/ |
+| L3 | Skill SOPs: proven task patterns per stack/domain | Long-term | ~/.claude/memory/L3/ |
+
+## L2 Entity Memory (POLE+O classification)
+
+Use when you learn a durable fact about an entity in the project:
+- Person — roles, preferences, expertise ("Alice owns auth module")
+- Object — systems, repos, services, configs ("payments service uses Stripe v3")
+- Location — codebases, repos, paths, environments
+- Event — decisions, incidents, migrations ("migrated to Postgres 2024-01")
+- Organization — teams, companies, external services
+
+Save to ~/.claude/memory/L2/<project>-<entity-type>-<slug>.md
+Format: entity name, type, facts, date observed.
+Update (don't duplicate) when facts change.
+
+## L3 SOP Memory — At Task Start
 
 Before starting any non-trivial task, search for relevant SOPs:
 
-```bash
-ls ~/.claude/memory/L3/ 2>/dev/null | grep -i "<keyword>"
+```powershell
+Get-ChildItem "$env:USERPROFILE\.claude\memory\L3\" -ErrorAction SilentlyContinue | Where-Object Name -match "<keyword>"
 ```
-
-Keywords: match domain of task (auth, api, database, testing, migration, deploy, etc.)
 
 - SOP found → read it, use as starting pattern, skip cold reasoning
 - No match → proceed normally, crystallize at end
 
-## At Task End — Crystallize New SOP
+## L3 SOP Memory — At Task End
 
 After completing any non-trivial task (3+ implementation steps):
 1. Distill what worked into a reusable SOP
-2. Save to `~/.claude/memory/L3/<stack>-<domain>-<slug>.md`
+2. Save to ~/.claude/memory/L3/<stack>-<domain>-<slug>.md
 3. Keep it short — steps + gotchas only, no boilerplate
 
 Skip crystallization for: one-liners, config tweaks, pure Q&A, trivial renames.
 
-## SOP Format
+## SOP Format (L3)
 
-```markdown
 # SOP: <domain> — <what this covers>
 Stack: <language/framework>
 Last used: <YYYY-MM-DD>
 
 ## Steps
 1. ...
-2. ...
 
 ## Gotchas
 - ...
-```
 
-## Directory
+## Entity Fact Format (L2)
 
-All SOPs live in: `~/.claude/memory/L3/`
+# Entity: <name>
+Type: Person | Object | Location | Event | Organization
+Project: <project or "global">
+Observed: <YYYY-MM-DD>
+
+## Facts
+- ...
+
+## Directories
+
+~/.claude/memory/L2/   <- entity facts (long-lived)
+~/.claude/memory/L3/   <- skill SOPs (long-lived)
 '@ | Set-Content -Encoding UTF8 "$rulesDir\memory-crystallization.md"
 
 @'
@@ -853,7 +928,7 @@ Archon runs in isolated git worktrees, handles plan -> implement -> validate -> 
 
 | User Says | Archon Workflow | Branch Pattern |
 |-----------|----------------|----------------|
-| "implement X", "build X", "create feature" | `archon-idea-to-pr` | `feat/{short-name}` |
+| "implement X", "build X", "create feature" | `archon-piv-loop` | `feat/{short-name}` |
 | "fix issue #N", "resolve issue" | `archon-fix-github-issue` | `fix/issue-{N}` |
 | "fix bug in X", "debug X" (needs investigation) | `archon-fix-github-issue` | `fix/{short-name}` |
 | "implement from plan", "execute this plan" | `archon-feature-development` | `feat/{short-name}` |
@@ -883,7 +958,7 @@ Immediately tell user:
 ## Example Dispatches
 
 User: "implement dark mode in the settings page"
--> `archon workflow run archon-idea-to-pr --branch feat/dark-mode "implement dark mode in the settings page"`
+-> `archon workflow run archon-piv-loop --branch feat/dark-mode "implement dark mode in the settings page"`
 
 User: "fix issue #42"
 -> `archon workflow run archon-fix-github-issue --branch fix/issue-42 "fix issue #42"`
@@ -1027,9 +1102,118 @@ gh pr create --title "<title>" --body "<summary>"
 Always output these commands even if GitHub is authenticated.
 '@ | Set-Content -Encoding UTF8 "$commandsDir\task.md"
 
-# ── L3 memory directory ───────────────────────────────────────────────────────
+# ── Multi-agent orchestration rule ───────────────────────────────────────────
+@'
+# Multi-Agent Orchestration
+
+## Four-Role System (VS Code / WUPHF pattern)
+
+| Role | Model | Responsibility |
+|------|-------|----------------|
+| Orchestrator | Opus | Receives requests, delegates, validates integration. Never implements. |
+| Planner | Opus | Codebase research, implementation strategy, file assignments, phase breakdown |
+| Coder | Sonnet | Writes production code following mandatory coding principles |
+| Designer | Sonnet | UI/UX, accessibility, visual design |
+
+## Orchestrator Rules
+
+- Delegate via outcome description, not step-by-step instructions
+- Parse plan into phases; identify parallelizable tasks before dispatching
+- Validate that outputs integrate before reporting done
+- Never write implementation code directly
+
+## Execution Model
+
+Step 1: Get plan -> call Planner with full context
+Step 2: Parse phases -> extract file assignments, identify parallel vs sequential
+Step 3: Execute phases -> run non-overlapping tasks simultaneously
+Step 4: Verify and report -> validate integration, summarize results
+
+## Parallelization Rules
+
+Run in parallel when tasks:
+- Touch different files
+- Operate in different domains (auth / UI / DB)
+- Have no data dependencies
+
+Run sequentially when:
+- Task B depends on Task A output
+- Tasks modify the same file
+- Design approval required before implementation
+
+## When to Use
+
+- Complex features needing planning + implementation + review simultaneously
+- Large refactors where single-session context gets heavy
+- Architecture decisions needing multi-perspective analysis
+- Use WUPHF (npx wuphf) for Claude-to-Claude multi-agent; Archon for plan->PR lifecycle
+'@ | Set-Content -Encoding UTF8 "$rulesDir\multi-agent-orchestration.md"
+
+# ── .NET DDD + VSA patterns rule ─────────────────────────────────────────────
+@'
+# .NET Architecture Patterns
+
+## Domain-Driven Design (DDD)
+
+Structure the domain layer around business concepts:
+
+- Entities — objects with identity (User, Order); mutable state via domain methods
+- Value Objects — immutable, identity by value (Email, Money, Address)
+- Aggregates — consistency boundary; one root entity owns the aggregate
+- Domain Events — facts that happened ("OrderPlaced", "UserRegistered")
+- Repositories — one per aggregate root; abstract persistence behind interface
+- Domain Services — business logic that spans multiple aggregates
+
+Domain/
+  Entities/User.cs
+  ValueObjects/Email.cs
+  Events/UserRegistered.cs
+  Interfaces/IUserRepository.cs
+
+## Vertical Slice Architecture (VSA)
+
+Organize by feature, not by layer. Each slice = one use case:
+
+Features/
+  CreateUser/
+    CreateUserCommand.cs      <- request/command
+    CreateUserHandler.cs      <- business logic
+    CreateUserResponse.cs     <- output
+    CreateUserValidator.cs    <- input validation
+    CreateUserTests.cs        <- tests alongside feature
+  GetUser/
+    GetUserQuery.cs
+    GetUserHandler.cs
+    GetUserResponse.cs
+
+- NO Layered: Controllers/ Services/ Repositories/ (cross-layer coupling)
+- YES Sliced: Features/CreateUser/ (change one feature = touch one folder)
+- Use MediatR for command/query dispatch
+- Each handler is independent — no shared service classes between slices
+
+## ASP.NET Minimal API + MediatR wiring
+
+app.MapPost("/users", async (CreateUserCommand cmd, IMediator mediator)
+    => await mediator.Send(cmd));
+
+## Error Handling
+
+Use Result<T> or OneOf — never throw for business errors:
+public record Result<T>(T? Value, string? Error, bool IsSuccess);
+
+## Coding Principles for .NET
+
+- Records for value objects and DTOs (immutable by default)
+- Minimal constructors — no optional params hiding required state
+- Extension methods over utility classes
+- IOptions<T> for config — never inject raw IConfiguration
+- CancellationToken on every async method signature
+'@ | Set-Content -Encoding UTF8 "$rulesDir\dotnet.md"
+
+# ── L2 + L3 memory directories ────────────────────────────────────────────────
+New-Item -ItemType Directory -Force -Path "$claudeDir\memory\L2" | Out-Null
 New-Item -ItemType Directory -Force -Path "$claudeDir\memory\L3" | Out-Null
-Write-Host "L3 memory directory created: $claudeDir\memory\L3"
+Write-Host "Memory directories created: $claudeDir\memory\L2 and $claudeDir\memory\L3"
 
 # ── Archon CLI install ────────────────────────────────────────────────────────
 $archonPath = "$env:USERPROFILE\.local\bin\archon.exe"
