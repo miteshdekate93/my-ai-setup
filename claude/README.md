@@ -32,10 +32,13 @@ Restart Claude Code after running.
 | `~/.claude/rules/testing.md` | TDD workflow, 80% coverage requirement |
 | `~/.claude/rules/caveman.md` | Always-on token compression + hedge reducer |
 | `~/.claude/rules/archon.md` | Auto-dispatch impl/fix/build to Archon workflows |
-| `~/.claude/rules/memory-crystallization.md` | L3 SOP memory: search before, crystallize after |
+| `~/.claude/rules/memory-crystallization.md` | Three-tier memory: L2 entity facts + L3 SOPs |
 | `~/.claude/rules/context-budget.md` | Batch tool calls, compress, spawn subagents |
+| `~/.claude/rules/multi-agent-orchestration.md` | Orchestrator/Planner/Coder/Designer roles + parallelization rules |
+| `~/.claude/rules/dotnet.md` | .NET DDD + Vertical Slice Architecture patterns |
 | `~/.claude/commands/task.md` | `/task` — full 8-phase pipeline command |
 | `~/.claude/commands/gitnexus-init.md` | `/gitnexus-init` — codebase intelligence setup |
+| `~/.claude/memory/L2/` | Entity fact memory (POLE+O) |
 | `~/.claude/memory/L3/` | SOP memory directory |
 | `~/.archon/config.yaml` | Archon config pointing to Claude binary |
 | `./CLAUDE.md` | Project-level workflow instructions |

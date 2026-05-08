@@ -20,6 +20,7 @@ bash codex/setup.sh
 |------|-------------|
 | `~/.codex/config.toml` | Model, sandbox mode, approval policy |
 | `~/.codex/AGENTS.md` | Global instructions (all rules in one file) |
+| `~/.codex/memory/L2/` | Entity fact memory: POLE+O facts about people, systems, events |
 | `~/.codex/memory/L3/` | SOP memory directory (shared pattern with Claude setup) |
 | `~/.local/bin/codex-task` | Full pipeline orchestrator (equivalent to Claude's `/task`) |
 | `~/.local/bin/codex-plan` | Planning only |
@@ -191,14 +192,15 @@ The project `AGENTS.md` overrides or extends global instructions. Edit it freely
 
 **What's in the global `~/.codex/AGENTS.md`:**
 - Caveman mode (terse responses, hedge reducer)
-- Coding style (immutability, file size, error handling)
+- Coding style (immutability, linear control flow, regenerability, file size, error handling)
+- Design patterns (Repository, Vertical Slice Architecture, API response envelope)
 - Development workflow (research → plan → TDD → review → commit)
 - Git commit format (conventional commits)
 - Testing requirements (80% coverage, TDD mandatory)
 - Security checklist
-- Model selection guide
+- Model selection + reasoning strategy guide
 - Context budget rules
-- L3 memory crystallization rules
+- Three-tier memory: L2 entity facts (POLE+O) + L3 SOP crystallization
 
 ---
 
