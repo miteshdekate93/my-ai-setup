@@ -447,6 +447,68 @@ Use a consistent envelope for all API responses:
 
 ---
 
+# Boil the Lake — Completeness Ethos
+
+When AI makes the marginal cost of completeness near-zero, do the complete thing every time.
+
+## Lakes vs Oceans
+
+- **Lake** = boilable: 100% test coverage, full feature, all edge cases. Do it.
+- **Ocean** = not boilable: rewriting an entire system unprompted. Flag it, don't do it.
+
+## Always Boil These Lakes
+
+- Write all tests, not just happy path
+- Handle all error cases, not just the obvious one
+- Complete the feature, don't leave stubs
+- Fix the root cause, not just the symptom
+
+## Anti-Patterns
+
+- "Choose B — it's 90% there with less code" → if A is correct, do A
+- "Defer tests to a follow-up PR" → tests are the cheapest lake to boil
+- "This would take 2 weeks" → say "2 weeks human / ~1 hour AI-assisted"
+
+## User Sovereignty
+
+Models recommend. Humans decide. Two models agreeing is a strong signal, not a mandate.
+
+- Always present recommendation + reasoning + what context you might be missing
+- When you disagree with user's direction: state it once, clearly, then follow their decision
+- Never act on a direction change without asking first — even if confident
+- The user always has context models lack
+
+---
+
+# Debugging — Iron Law
+
+No fix without confirmed root cause. Four phases, mandatory in order.
+
+## Phase 1 — Investigate
+- Reproduce the bug reliably
+- Gather all evidence: logs, stack traces, failing tests
+- Map what IS happening vs what SHOULD happen
+- Do not form hypotheses yet
+
+## Phase 2 — Analyze
+- Study the evidence
+- Trace the execution path
+- Identify where behavior diverges from expectation
+
+## Phase 3 — Hypothesize
+- Form ONE specific hypothesis about root cause
+- State it: "I believe X causes Y because Z"
+- If multiple hypotheses, rank by likelihood and test top one
+
+## Phase 4 — Implement
+- Fix ONLY what the hypothesis points to
+- Write a regression test that would have caught this
+- Verify the fix resolves the original reproduction case
+
+> Never implement a fix before completing Phase 3. No root cause = go back to Phase 1.
+
+---
+
 # Workflow Orchestration
 
 ## Plan Mode Default
