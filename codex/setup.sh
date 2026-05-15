@@ -168,9 +168,19 @@ Before marking work complete:
 ## Feature Implementation Workflow
 
 0. **Research & Reuse** _(mandatory before any new implementation)_
+
+   **Retrieval-led reasoning:** Always read relevant docs and code BEFORE implementing. Pre-training knowledge is the fallback, not the primary source. Cost of retrieval is near-zero; cost of wrong assumptions is high.
+
+   **Three-Layer Knowledge Search:**
+   - **Layer 1 — Tried and true:** Standard patterns you already know. Check anyway — cost is near-zero. This is your baseline.
+   - **Layer 2 — New and popular:** Current docs, blog posts, ecosystem trends. Search but scrutinize — the crowd can be wrong.
+   - **Layer 3 — First principles:** Original reasoning about the specific problem. Most valuable. The Eureka Moment: understanding what everyone does and WHY, then finding why the conventional approach is wrong for this case.
+
+   **Concrete steps:**
    - Run `gh search repos` and `gh search code` to find existing implementations
-   - Check package registries (npm, PyPI, crates.io) before writing utility code
-   - Prefer battle-tested libraries over hand-rolled solutions
+   - Use vendor docs to confirm API behavior before implementing
+   - Search npm/PyPI/crates.io before writing utility code
+   - Prefer adopting/porting a proven approach over writing net-new code
 
 1. **Plan First**
    - Break down into phases
@@ -344,6 +354,42 @@ After completing any non-trivial task (3+ implementation steps):
 1. Distill what worked into a reusable SOP
 2. Save to `~/.codex/memory/L3/<stack>-<domain>-<slug>.md`
 3. Keep short — steps + gotchas only, under 30 lines
+
+## Memory Type Taxonomy
+
+When saving L3 memories, classify by type:
+- **pattern** — reusable code/architectural pattern
+- **preference** — user or project preference discovered during work
+- **architecture** — system design decision with rationale
+- **bug** — bug found + root cause + fix (include importance score)
+- **workflow** — process that worked well for this stack/domain
+- **fact** — durable fact about the codebase, API, or system
+
+## Crystal Lifecycle (End of Multi-Step Tasks)
+
+After any task with 3+ implementation steps, crystallize into a Crystal before the SOP:
+
+```
+Crystal:
+  narrative: "1-2 sentence summary of what was accomplished"
+  keyOutcomes:
+    - "Decision or change made"
+    - "Pattern established"
+  filesAffected:
+    - "path/to/file"
+  lessons:
+    - "Reusable insight with confidence: high/medium/low"
+```
+
+Crystals feed into L3 SOPs. Lessons with confidence:high get saved as standalone L3 entries.
+
+## Importance Scale
+
+When noting why a memory matters (1-10):
+- 1-3: Routine reads, minor lookups
+- 4-6: File edits, command runs, feature additions
+- 7-9: Architectural decisions, API contracts, breaking changes
+- 10: Critical system changes, security fixes, data migrations
 
 ## SOP Format (L3)
 

@@ -38,6 +38,8 @@ Located in `~/.claude/agents/`:
 | refactor-cleaner | Dead code cleanup | Code maintenance |
 | doc-updater | Documentation | Updating docs |
 | rust-reviewer | Rust code review | Rust projects |
+| context-pruner | Compress long sessions | When context window gets heavy (10+ turns) |
+| file-picker | Find relevant files in codebase | Before planning, to scope what needs to change |
 
 ## Immediate Agent Usage
 
@@ -172,12 +174,19 @@ The Feature Implementation Workflow describes the development pipeline: research
 ## Feature Implementation Workflow
 
 0. **Research & Reuse** _(mandatory before any new implementation)_
-   - **GitHub code search first:** Run `gh search repos` and `gh search code` to find existing implementations, templates, and patterns before writing anything new.
-   - **Library docs second:** Use Context7 or primary vendor docs to confirm API behavior, package usage, and version-specific details before implementing.
-   - **Exa only when the first two are insufficient:** Use Exa for broader web research or discovery after GitHub search and primary docs.
-   - **Check package registries:** Search npm, PyPI, crates.io, and other registries before writing utility code. Prefer battle-tested libraries over hand-rolled solutions.
-   - **Search for adaptable implementations:** Look for open-source projects that solve 80%+ of the problem and can be forked, ported, or wrapped.
-   - Prefer adopting or porting a proven approach over writing net-new code when it meets the requirement.
+
+   **Retrieval-led reasoning:** Always read relevant docs and code BEFORE implementing. Pre-training knowledge is the fallback, not the primary source. Cost of retrieval is near-zero; cost of wrong assumptions is high.
+
+   **Three-Layer Knowledge Search:**
+   - **Layer 1 — Tried and true:** Standard patterns you already know. Check anyway — cost is near-zero. This is your baseline.
+   - **Layer 2 — New and popular:** Current docs, blog posts, ecosystem trends. Search but scrutinize — the crowd can be wrong.
+   - **Layer 3 — First principles:** Original reasoning about the specific problem. Most valuable. The Eureka Moment: understanding what everyone does and WHY, then finding why the conventional approach is wrong for this case.
+
+   **Concrete steps:**
+   - Run `gh search repos` and `gh search code` to find existing implementations
+   - Use Context7 or vendor docs to confirm API behavior before implementing
+   - Search npm/PyPI/crates.io before writing utility code
+   - Prefer adopting/porting a proven approach over writing net-new code
 
 1. **Plan First**
    - Use **planner** agent to create implementation plan
@@ -474,6 +483,40 @@ After completing any non-trivial task (3+ implementation steps):
 3. Keep it short — steps + gotchas only, no boilerplate
 
 Skip crystallization for: one-liners, config tweaks, pure Q&A, trivial renames.
+
+## Memory Type Taxonomy
+
+When saving L3 memories, classify by type:
+- **pattern** — reusable code/architectural pattern
+- **preference** — user or project preference discovered during work
+- **architecture** — system design decision with rationale
+- **bug** — bug found + root cause + fix (include importance score)
+- **workflow** — process that worked well for this stack/domain
+- **fact** — durable fact about the codebase, API, or system
+
+## Crystal Lifecycle (End of Multi-Step Tasks)
+
+After any task with 3+ implementation steps, crystallize into a Crystal before the SOP:
+
+Crystal:
+  narrative: "1-2 sentence summary of what was accomplished"
+  keyOutcomes:
+    - "Decision or change made"
+    - "Pattern established"
+  filesAffected:
+    - "path/to/file"
+  lessons:
+    - "Reusable insight with confidence: high/medium/low"
+
+Crystals feed into L3 SOPs. Lessons with confidence:high get saved as standalone L3 entries.
+
+## Importance Scale
+
+When noting why a memory matters (1-10):
+- 1-3: Routine reads, minor lookups
+- 4-6: File edits, command runs, feature additions
+- 7-9: Architectural decisions, API contracts, breaking changes
+- 10: Critical system changes, security fixes, data migrations
 
 ## SOP Format (L3)
 
@@ -1209,6 +1252,88 @@ public record Result<T>(T? Value, string? Error, bool IsSuccess);
 - IOptions<T> for config — never inject raw IConfiguration
 - CancellationToken on every async method signature
 '@ | Set-Content -Encoding UTF8 "$rulesDir\dotnet.md"
+
+# ── Boil the Lake — completeness ethos ───────────────────────────────────────
+@'
+# Boil the Lake — Completeness Ethos
+
+From Garry Tan's gstack: when AI makes the marginal cost of completeness near-zero, do the complete thing every time.
+
+## Lakes vs Oceans
+
+- **Lake** = boilable: 100% test coverage, full feature, all edge cases. Do it.
+- **Ocean** = not boilable: rewriting an entire system unprompted. Flag it, don't do it.
+
+## Always Boil These Lakes
+
+- Write all tests, not just happy path
+- Handle all error cases, not just the obvious one
+- Complete the feature, don't leave stubs
+- Fix the root cause, not just the symptom
+
+## Never Say These (anti-patterns)
+
+- "Choose B — it's 90% there with less code" -> if A is correct, do A
+- "Defer tests to a follow-up PR" -> tests are the cheapest lake to boil
+- "This would take 2 weeks" -> say "2 weeks human / ~1 hour AI-assisted"
+
+## AI Compression Table
+
+| Task | Human | AI-assisted |
+|------|-------|-------------|
+| Boilerplate/scaffolding | 2 days | 15 min |
+| Test writing | 1 day | 15 min |
+| Feature implementation | 1 week | 30 min |
+| Bug fix + regression | 4 hours | 15 min |
+| Architecture/design | 2 days | 4 hours |
+
+## User Sovereignty
+
+Models recommend. Humans decide. Two models agreeing is a strong signal, not a mandate.
+
+Rules:
+- Always present recommendation + reasoning + what context you might be missing
+- When you disagree with user's direction: state it once, clearly, then follow their decision
+- Never act on a direction change without asking first — even if confident
+- The user always has context models lack
+'@ | Set-Content -Encoding UTF8 "$rulesDir\boil-the-lake.md"
+
+# ── Debugging — Iron Law ──────────────────────────────────────────────────────
+@'
+# Debugging — Iron Law
+
+From gstack: no fix without confirmed root cause. Four phases, mandatory in order.
+
+## The Four Phases
+
+**Phase 1 — Investigate**
+- Reproduce the bug reliably
+- Gather all evidence: logs, stack traces, failing tests, screenshots
+- Map what IS happening vs what SHOULD happen
+- Do not form hypotheses yet
+
+**Phase 2 — Analyze**
+- Study the evidence
+- Trace the execution path
+- Identify the exact location where behavior diverges from expectation
+
+**Phase 3 — Hypothesize**
+- Form ONE specific hypothesis about root cause
+- State it explicitly: "I believe X causes Y because Z"
+- If multiple hypotheses exist, rank by likelihood and test the top one
+
+**Phase 4 — Implement**
+- Fix ONLY what the hypothesis points to
+- Write a regression test that would have caught this
+- Verify the fix resolves the original reproduction case
+
+## Iron Law
+
+> Never implement a fix before completing Phase 3.
+
+If you cannot state a specific root cause hypothesis, go back to Phase 1.
+Fixing symptoms without root cause = the bug comes back.
+'@ | Set-Content -Encoding UTF8 "$rulesDir\debugging.md"
 
 # ── L2 + L3 memory directories ────────────────────────────────────────────────
 New-Item -ItemType Directory -Force -Path "$claudeDir\memory\L2" | Out-Null
