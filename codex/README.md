@@ -19,7 +19,7 @@ bash codex/setup.sh
 | Path | What it does |
 |------|-------------|
 | `~/.codex/config.toml` | Model, sandbox mode, approval policy |
-| `~/.codex/AGENTS.md` | Global instructions (all rules in one file) |
+| `~/.codex/AGENTS.md` | Global instructions (all rules in one file) — Oracle drift-guard, scout+researcher pre-planning, worker discipline, fail-closed destructive ops, CONTEXT.md glossary |
 | `~/.codex/memory/L2/` | Entity fact memory: POLE+O facts about people, systems, events |
 | `~/.codex/memory/L3/` | SOP memory directory (shared pattern with Claude setup) |
 | `~/.local/bin/codex-task` | Full pipeline orchestrator (equivalent to Claude's `/task`) |
@@ -45,8 +45,9 @@ codex-task "fix bug where users can delete other users' posts"
 codex-task "refactor the payment module to use repository pattern"
 ```
 
-Equivalent to Claude Code's `/task`. Runs all 8 phases autonomously:
+Equivalent to Claude Code's `/task`. Runs all phases autonomously:
 
+-1. **Scout + Researcher** (parallel recon) — `context.md` + `external-reference.md`
 1. **Branch** — `git checkout -b feat/<slug>`
 2. **Plan** — numbered breakdown of changes + risks
 3. **Tests (RED)** — write failing tests, run to confirm failure
@@ -95,6 +96,39 @@ codex-security
 | Not authenticated | Full pipeline → outputs push + PR commands to run manually |
 
 Either way, all code work (branch, tests, implement, review) runs locally first.
+
+---
+
+## Oracle — Drift Guard
+
+For complex features (3+ phases), `codex-task` includes a built-in drift check:
+
+After every 3 implementation phases, Codex pauses to verify:
+1. Are current changes consistent with the original plan?
+2. Were any architectural decisions made implicitly without approval?
+3. Does the current trajectory contradict prior decisions?
+
+**Key principle:** Consistency trumps novelty unless context strongly supports revision.
+If drift detected: surface the contradiction, realign, then continue.
+
+---
+
+## CONTEXT.md — Project Shared Language
+
+Create a `CONTEXT.md` in your project root (one-time, ~10 min):
+
+```markdown
+## Glossary
+- **[Term]** — what it means in this specific codebase
+
+## Architecture Decisions
+- ADR-001: [Decision] — [Why] — [Date]
+```
+
+`codex-task` reads this before planning. Without it, Codex reasons from generic knowledge.
+With it, Codex knows your domain, your patterns, and why architectural choices were made.
+
+**Add to it whenever:** Claude/Codex makes a wrong assumption → that correction belongs in CONTEXT.md.
 
 ---
 
@@ -201,6 +235,12 @@ The project `AGENTS.md` overrides or extends global instructions. Edit it freely
 - Model selection + reasoning strategy guide
 - Context budget rules
 - Three-tier memory: L2 entity facts (POLE+O) + L3 SOP crystallization
+- Oracle drift-guard (consistency check after every 3 phases)
+- Scout + Researcher pre-planning recon pattern
+- Worker discipline (smallest correct change, no placeholders, escalate unapproved scope)
+- Fail-closed for destructive operations (deny if context missing/ambiguous)
+- CONTEXT.md project glossary pattern
+- L2 memory staleness (Last-verified + Expires fields, flag facts >6 months old)
 
 ---
 
@@ -215,6 +255,10 @@ gh auth login
 
 # 3. Start building
 codex-task "implement <first feature>"
+
+# 4. Create CONTEXT.md (one-time — 10 min)
+# Domain terms + key architectural decisions
+# codex-task reads this before every plan
 ```
 
 ---

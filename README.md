@@ -60,7 +60,7 @@ bash codex/setup.sh
 | Security scan command | `/security-scan` (ECC skill) | `codex-security` |
 | Memory (L3 SOPs) | `~/.claude/memory/L3/` | `~/.codex/memory/L3/` |
 | Cross-session memory | Stash MCP (`~/.stash/`) | Stash MCP (`~/.stash/`) |
-| Multi-agent / cache | WUPHF (`npx wuphf`) | WUPHF (with Claude Code) |
+| Multi-agent / cache | WUPHF (`npx wuphf`) — Five-Role system + Oracle | WUPHF (with Claude Code) |
 | Workflow engine | Archon CLI (auto-dispatched) | built-in 8-phase pipeline |
 
 ---
@@ -115,7 +115,15 @@ npx wuphf    # Claude Code only
 
 Use when: long refactors, parallel planning + implementation, architecture reviews.
 
-### 5. Stash — persistent memory across sessions (no re-explaining)
+### 5. Scout + Researcher — eliminate cold-start planning
+
+Before every complex feature, run scout (codebase recon) + researcher (external docs) in parallel.
+Scout writes `context.md`, Researcher writes `external-reference.md`. Planner reads both.
+Eliminates the "cold start" where the AI reasons from scratch about your codebase.
+
+Built into `/task` and `codex-task` automatically — no extra command needed.
+
+### 6. Stash — persistent memory across sessions (no re-explaining)
 
 Stash is a self-hosted MCP server that remembers what Claude learned last session.
 
@@ -126,7 +134,7 @@ claude mcp add stash --sse http://localhost:8765/sse
 
 Config is already at `~/.stash/docker-compose.yml`. Fill in `.env` with your API keys.
 
-### 6. L3 Memory — never solve the same problem twice
+### 7. L3 Memory — never solve the same problem twice
 
 Every `/task` or `codex-task` crystallizes a reusable SOP in `~/.*/memory/L3/`.
 On the next similar task it's recalled automatically — skips cold-start reasoning.
@@ -137,12 +145,12 @@ Second JWT task:   2-3x faster (SOP recalled)
 Tenth JWT task:    5x faster (proven pattern + gotchas memorized)
 ```
 
-### 7. Caveman mode — 65% fewer output tokens (Claude only)
+### 8. Caveman mode — 65% fewer output tokens (Claude only)
 
 Always active. Drops filler, articles, hedging — keeps full technical accuracy.
 Faster responses, longer sessions before context limit.
 
-### 8. Model routing
+### 9. Model routing
 
 | Task | Claude model | Codex model |
 |------|-------------|-------------|
@@ -171,7 +179,11 @@ bash ~/path/to/my-ai-setup/codex/setup.sh     # → writes AGENTS.md
 # 3. (Claude only) Index codebase with GitNexus for deep code intelligence
 /gitnexus-init
 
-# 4. Optional: authenticate GitHub for auto-push + auto-PR
+# 4. Create CONTEXT.md (one-time per project — 10 min)
+# Add domain terms + key architectural decisions
+# See docs: what to put in CONTEXT.md
+
+# 5. Optional: authenticate GitHub for auto-push + auto-PR
 gh auth login
 
 # 5. Start building

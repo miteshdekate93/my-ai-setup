@@ -34,7 +34,7 @@ Restart Claude Code after running.
 | `~/.claude/rules/archon.md` | Auto-dispatch impl/fix/build to Archon workflows |
 | `~/.claude/rules/memory-crystallization.md` | Three-tier memory: L2 entity facts + L3 SOPs |
 | `~/.claude/rules/context-budget.md` | Batch tool calls, compress, spawn subagents |
-| `~/.claude/rules/multi-agent-orchestration.md` | Orchestrator/Planner/Coder/Designer roles + parallelization rules |
+| `~/.claude/rules/multi-agent-orchestration.md` | Five-Role system: Orchestrator/Planner/Coder/Designer/Oracle + bounded review loop |
 | `~/.claude/rules/dotnet.md` | .NET DDD + Vertical Slice Architecture patterns |
 | `~/.claude/commands/task.md` | `/task` — full 8-phase pipeline command |
 | `~/.claude/commands/gitnexus-init.md` | `/gitnexus-init` — codebase intelligence setup |
@@ -141,6 +141,38 @@ curl -fsSL https://archon.diy/install | bash
 
 ---
 
+## Oracle — Drift Guard for Long Sessions
+
+For complex features spanning 3+ implementation phases, the Oracle agent acts as a consistency checkpoint.
+
+**What it does:**
+- Reads current trajectory + prior decisions
+- Checks for contradictions and silent scope creep
+- Outputs: inherited decisions | diagnosis | drift check | recommendation | escalation
+
+**When it runs:** automatically after every 3 phases in `/task` for complex features.
+
+**Key principle:** Consistency trumps novelty unless context strongly supports revision.
+
+Oracle never writes code — it anchors the session to the original plan.
+
+---
+
+## Scout + Researcher — Pre-Planning Recon
+
+Before the planner runs, two agents fire in parallel:
+
+| Agent | Writes to | Answers |
+|-------|-----------|---------|
+| Scout | `context.md` | What files are relevant? Existing patterns? Test coverage? |
+| Researcher | `external-reference.md` | Current API docs? Breaking changes? Library versions? |
+
+Planner reads both artifacts — no cold-start reasoning about your codebase.
+
+**Automatically triggered by `/task` for complex features.** Skip condition: trivial fixes, single-file edits, config changes.
+
+---
+
 ## WUPHF — Multi-Agent Orchestration (97% Cache Hit Rate)
 
 WUPHF runs multiple Claude Code agents with fresh sessions per turn. Prevents context bloat and maximises prompt cache hits.
@@ -237,6 +269,12 @@ Stop: "normal mode"
 - Compress old results instead of quoting verbatim
 - Spawn subagents after 10+ heavy turns
 
+### Fresh-context code review
+Code reviewer spawns with zero session history — reads only diff + repo files.
+Max 3 review rounds with early exit on clean pass.
+Dynamic angle selection: DB change → data-safety, auth → security mandatory.
+Saves ~50% review tokens vs. carrying full session context into review.
+
 ---
 
 ## Model Selection
@@ -263,7 +301,11 @@ bash ~/path/to/claude/setup.sh
 # 3. Authenticate GitHub (one-time, optional but recommended)
 gh auth login
 
-# 4. Start building
+# 4. Create CONTEXT.md (10 min — pays off every session)
+# Add domain glossary + key ADRs
+# Claude reads this before every plan
+
+# 5. Start building
 /task "implement <first feature>"
 ```
 
