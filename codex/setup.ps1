@@ -166,6 +166,11 @@ Before marking work complete:
 
 ## Feature Implementation Workflow
 
+-1. **Scout + Researcher** _(parallel recon — skip for trivial/single-file fixes)_
+   - Scout: read relevant files, existing patterns, test coverage → write to `context.md`
+   - Researcher: check library docs, API behavior, breaking changes → write to `external-reference.md`
+   - Plan uses both artifacts as input — eliminates cold-start planning
+
 0. **Research & Reuse** _(mandatory before any new implementation)_
 
    **Retrieval-led reasoning:** Always read relevant docs and code BEFORE implementing. Pre-training knowledge is the fallback, not the primary source. Cost of retrieval is near-zero; cost of wrong assumptions is high.
@@ -185,6 +190,7 @@ Before marking work complete:
    - Break down into phases
    - Identify dependencies and risks
    - Write numbered plan before coding
+   - Check `CONTEXT.md` for domain terms and ADRs before planning
 
 2. **TDD Approach**
    - Write tests first (RED)
@@ -195,6 +201,7 @@ Before marking work complete:
 3. **Code Review**
    - Check unclear names, missing error handling, hardcoded values
    - Address CRITICAL and HIGH issues before continuing
+   - Max 3 review rounds; stop early if no blockers
 
 4. **Commit & Push**
    - Conventional commits: feat/fix/refactor/docs/test/chore/perf/ci
@@ -406,9 +413,18 @@ Last used: <YYYY-MM-DD>
 Type: Person | Object | Location | Event | Organization
 Project: <project or "global">
 Observed: <YYYY-MM-DD>
+Last-verified: <YYYY-MM-DD>
+Expires: <YYYY-MM-DD or "never">
 
 ## Facts
 - ...
+
+## Staleness Rules
+- Check `Last-verified` before acting on a L2 fact
+- Facts >6 months old without re-verification: flag as POSSIBLY STALE, verify before using
+- When confirmed still true: update `Last-verified` date
+- When fact changes: update in-place, don't duplicate
+- When fact expires: delete the file
 
 ---
 
@@ -521,6 +537,32 @@ Never implement a fix before completing Phase 3. No root cause = go back to Phas
 ## Self-Improvement Loop
 - After ANY correction from the user: update `tasks/lessons.md` with the pattern
 - Write rules for yourself that prevent the same mistake
+
+## Oracle Drift-Guard (Long Features)
+After every 3 implementation phases, pause and check:
+1. Are current changes consistent with the original plan?
+2. Have any architectural decisions been made implicitly without approval?
+3. Does current trajectory contradict prior decisions?
+
+**Consistency trumps novelty unless context strongly supports revision.**
+If drift found: stop, surface contradiction, realign before continuing.
+
+## Worker Discipline
+When implementing:
+- Smallest correct change — don't rewrite what isn't broken
+- Follow existing patterns — no speculative refactors
+- No placeholder code — implement fully or escalate
+- No silent scope expansion — escalate unapproved architectural decisions
+- No success summaries without corresponding edits
+
+## Fail-Closed for Destructive Operations
+If context is missing or ambiguous on ANY destructive operation (delete, drop, truncate, force-push, overwrite): DENY and ask.
+"I think this is safe" is not good enough — confirm explicitly before executing.
+
+## CONTEXT.md — Project Shared Language
+Every project should have a `CONTEXT.md` with domain terms + Architecture Decision Records.
+Read it before planning any complex feature. Update it when new ADRs are made.
+Format: glossary of domain terms + numbered ADR list (decision + rationale + date).
 '@ | Set-Content -Encoding UTF8 "$codexDir\AGENTS.md"
 
 # ── AGENTS.md in current directory (project instructions) ────────────────────

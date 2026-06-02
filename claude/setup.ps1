@@ -40,14 +40,84 @@ Located in `~/.claude/agents/`:
 | rust-reviewer | Rust code review | Rust projects |
 | context-pruner | Compress long sessions | When context window gets heavy (10+ turns) |
 | file-picker | Find relevant files in codebase | Before planning, to scope what needs to change |
+| scout | Pre-planning codebase recon | Before planner on any complex feature |
+| researcher | External docs + library recon | Before planner, parallel with scout |
+| oracle | Drift-guard for long sessions | After every 3 phases in complex features |
 
 ## Immediate Agent Usage
 
 No user prompt needed:
-1. Complex feature requests - Use **planner** agent
-2. Code just written/modified - Use **code-reviewer** agent
+1. Complex feature requests - Use **scout + researcher** (parallel) → **planner** agent
+2. Code just written/modified - Use **code-reviewer** agent (fresh context)
 3. Bug fix or new feature - Use **tdd-guide** agent
 4. Architectural decision - Use **architect** agent
+5. Long feature (3+ phases done) - Use **oracle** drift-guard
+
+## Pre-Planning Reconnaissance (MANDATORY for complex features)
+
+Run scout + researcher IN PARALLEL before planner. Skip for: trivial fixes, single-file edits, config changes.
+
+```
+Scout (codebase recon):      writes → context.md
+Researcher (external docs):  writes → external-reference.md
+Planner:                     reads both → produces plan
+```
+
+Scout answers: What files are relevant? What patterns already exist? What tests cover this area?
+Researcher answers: What do the docs say? Are there breaking changes? What's the current API?
+
+## Oracle — Drift Guard
+
+Run oracle after every 3 implementation phases in complex features.
+
+Oracle's job:
+1. Read forked context + current trajectory
+2. Check for contradictions against prior decisions
+3. Output: inherited decisions | diagnosis | drift/contradiction check | recommendation | risks | what to decide
+
+Key principle: **Consistency trumps novelty unless context strongly supports revision.**
+
+Oracle never implements. It anchors. If oracle finds drift, STOP and realign before continuing.
+
+## Fresh-Context Code Review
+
+Code reviewer MUST spawn with zero conversation history — read only diff + repo files directly.
+No inherited session state.
+
+Rules:
+- Max 3 review rounds; stop early if no blockers found
+- Dynamic angle selection based on change type:
+  - DB migration → add data-safety angle
+  - Auth change → security angle mandatory
+  - UI change → UX/accessibility angle
+  - Any change → correctness + tests + simplicity always
+- Synthesize findings into: fixes-now | optional-enhancements | deferred-with-reasoning
+- Autofix mode: apply only HIGH+ priority fixes without menu
+
+## Meta-Prompt Handoff Standard
+
+Every agent handoff produces a compact meta-prompt (not raw context dump):
+```
+Outcome: <concrete result the next agent must produce>
+Context: <relevant files + line numbers + key patterns>
+Constraints: <hard limits — do not cross>
+Success criteria: <how to verify the outcome>
+Validation: <commands/checks to run>
+Escalation: <when to stop and ask vs. proceed>
+```
+
+Write to `/handoff/meta-prompt.md` in the worktree. Downstream agents read the file, not conversation history.
+
+## Worker Discipline
+
+When implementing (writing code):
+- Smallest correct change — do not rewrite what isn't broken
+- Follow existing patterns — no speculative refactors
+- No placeholder code — implement fully or escalate
+- No silent scope expansion — escalate unapproved architectural decisions
+- No success summaries without corresponding edits
+
+Escalation triggers: implementation gaps, unapproved product choices, decisions outside original approval.
 
 ## Parallel Task Execution
 
@@ -75,6 +145,8 @@ Run sequentially when:
 - Task B depends on Task A output
 - Tasks modify the same file
 - Design/approval required before implementation
+
+Single-writer rule: only one agent writes to a given file at a time. Multiple reviewers may run in parallel but only one writer per file/worktree.
 
 ## Outcome-Based Delegation
 
@@ -173,6 +245,14 @@ The Feature Implementation Workflow describes the development pipeline: research
 
 ## Feature Implementation Workflow
 
+-1. **Scout + Researcher** _(parallel recon before planning — skip for trivial/single-file fixes)_
+   - Run **scout** (codebase recon) + **researcher** (external docs) in PARALLEL
+   - Scout writes findings to `context.md` in worktree
+   - Researcher writes to `external-reference.md`
+   - Scout answers: relevant files, existing patterns, test coverage
+   - Researcher answers: current API behavior, breaking changes, library versions
+   - Planner reads both before producing plan — eliminates cold-start planning
+
 0. **Research & Reuse** _(mandatory before any new implementation)_
 
    **Retrieval-led reasoning:** Always read relevant docs and code BEFORE implementing. Pre-training knowledge is the fallback, not the primary source. Cost of retrieval is near-zero; cost of wrong assumptions is high.
@@ -193,6 +273,7 @@ The Feature Implementation Workflow describes the development pipeline: research
    - Generate planning docs before coding: PRD, architecture, system_design, tech_doc, task_list
    - Identify dependencies and risks
    - Break down into phases
+   - Check `CONTEXT.md` for project-specific domain terms and ADRs before planning
 
 2. **TDD Approach**
    - Use **tdd-guide** agent
@@ -202,7 +283,8 @@ The Feature Implementation Workflow describes the development pipeline: research
    - Verify 80%+ coverage
 
 3. **Code Review**
-   - Use **code-reviewer** agent immediately after writing code
+   - Use **code-reviewer** agent immediately after writing code (spawn fresh — no session history)
+   - Max 3 review rounds; stop early if no blockers
    - Address CRITICAL and HIGH issues
    - Fix MEDIUM issues when possible
 
@@ -536,9 +618,19 @@ Last used: <YYYY-MM-DD>
 Type: Person | Object | Location | Event | Organization
 Project: <project or "global">
 Observed: <YYYY-MM-DD>
+Last-verified: <YYYY-MM-DD>
+Expires: <YYYY-MM-DD or "never">
 
 ## Facts
 - ...
+
+## Staleness Rules
+
+- Always check `Last-verified` before acting on a L2 fact
+- Facts >6 months old without re-verification: flag as POSSIBLY STALE, verify before using
+- When a fact is confirmed still true: update `Last-verified` date
+- When a fact changes: update in-place (don't duplicate)
+- When a fact expires: delete the file, don't leave stale data
 
 ## Directories
 
@@ -634,6 +726,18 @@ Every 10 tool-use turns: assess context bloat.
 - Point at logs, errors, failing tests – then resolve them
 - Zero context switching required from the user
 - Go fix failing CI tests without being told how
+
+## 7. Fail-Closed for Destructive Operations
+- If context is missing or ambiguous on ANY destructive operation: DENY and ask
+- Destructive = delete, drop, truncate, force-push, reset --hard, rm -rf, overwrite without backup
+- "I think this is safe" is not good enough — confirm explicitly
+- Prefer reversible operations; if irreversible, confirm scope before executing
+
+## 8. CONTEXT.md — Project Shared Language
+- Every project should have a `CONTEXT.md` with: domain terms + Architecture Decision Records (ADRs)
+- Read CONTEXT.md before planning any feature in an unfamiliar codebase
+- Update CONTEXT.md when new ADRs are made or domain terms are defined
+- Format: glossary of domain terms + numbered ADR list (decision + rationale + date)
 
 ---
 
@@ -1149,7 +1253,7 @@ Always output these commands even if GitHub is authenticated.
 @'
 # Multi-Agent Orchestration
 
-## Four-Role System (VS Code / WUPHF pattern)
+## Five-Role System
 
 | Role | Model | Responsibility |
 |------|-------|----------------|
@@ -1157,6 +1261,7 @@ Always output these commands even if GitHub is authenticated.
 | Planner | Opus | Codebase research, implementation strategy, file assignments, phase breakdown |
 | Coder | Sonnet | Writes production code following mandatory coding principles |
 | Designer | Sonnet | UI/UX, accessibility, visual design |
+| Oracle | Opus | Drift-guard — checks current trajectory against prior decisions at phase checkpoints |
 
 ## Orchestrator Rules
 
@@ -1164,13 +1269,38 @@ Always output these commands even if GitHub is authenticated.
 - Parse plan into phases; identify parallelizable tasks before dispatching
 - Validate that outputs integrate before reporting done
 - Never write implementation code directly
+- Run oracle after every 3 phases on complex features
+
+## Oracle Drift-Guard
+
+Invoke after every 3 implementation phases:
+1. Oracle reads: forked context + current state + prior decisions
+2. Outputs: inherited decisions | diagnosis | drift check | recommendation | risks
+3. Key principle: **Consistency trumps novelty unless context strongly supports revision**
+4. If drift found: STOP, realign, then continue
+5. Oracle never implements — it anchors
 
 ## Execution Model
 
-Step 1: Get plan -> call Planner with full context
-Step 2: Parse phases -> extract file assignments, identify parallel vs sequential
-Step 3: Execute phases -> run non-overlapping tasks simultaneously
-Step 4: Verify and report -> validate integration, summarize results
+Step 0: Scout + Researcher (parallel recon) → context.md + external-reference.md
+Step 1: Get plan → call Planner with context.md + external-reference.md
+Step 2: Parse phases → extract file assignments, identify parallel vs sequential
+Step 3: Execute phases → run non-overlapping tasks simultaneously
+Step 3.5: Oracle drift check (after every 3 phases)
+Step 4: Bounded review loop (max 3 rounds, fresh context, early exit on clean pass)
+Step 5: Verify and report → validate integration, summarize results
+
+## Bounded Review Loop
+
+- Spawn reviewers with ZERO conversation history — read only diff + repo files
+- Run up to 3 parallel reviewers with dynamic angle selection:
+  - Always: correctness, tests, simplicity
+  - DB change: add data-safety angle
+  - Auth change: security angle mandatory
+  - UI change: UX/accessibility angle
+- Max 3 rounds; stop early if no blockers found
+- Synthesize: fixes-now | optional-enhancements | deferred-with-reasoning
+- Single-writer rule: only one agent writes to a file at a time
 
 ## Parallelization Rules
 
@@ -1183,6 +1313,17 @@ Run sequentially when:
 - Task B depends on Task A output
 - Tasks modify the same file
 - Design approval required before implementation
+
+## Context Artifacts (Handoff Standard)
+
+Each agent handoff produces `meta-prompt.md`:
+- Outcome: concrete result next agent must produce
+- Context: relevant files + line numbers + key patterns
+- Constraints: hard limits
+- Success criteria: verification method
+- Escalation: when to stop and ask vs. proceed
+
+Store in `/handoff/` directory. Downstream agents read files, not conversation history.
 
 ## When to Use
 
