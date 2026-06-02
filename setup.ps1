@@ -38,14 +38,86 @@ Located in `~/.claude/agents/`:
 | refactor-cleaner | Dead code cleanup | Code maintenance |
 | doc-updater | Documentation | Updating docs |
 | rust-reviewer | Rust code review | Rust projects |
+| context-pruner | Compress long sessions | When context window gets heavy (10+ turns) |
+| file-picker | Find relevant files in codebase | Before planning, to scope what needs to change |
+| scout | Pre-planning codebase recon | Before planner on any complex feature |
+| researcher | External docs + library recon | Before planner, parallel with scout |
+| oracle | Drift-guard for long sessions | After every 3 phases in complex features |
 
 ## Immediate Agent Usage
 
 No user prompt needed:
-1. Complex feature requests - Use **planner** agent
-2. Code just written/modified - Use **code-reviewer** agent
+1. Complex feature requests - Use **scout + researcher** (parallel) → **planner** agent
+2. Code just written/modified - Use **code-reviewer** agent (fresh context)
 3. Bug fix or new feature - Use **tdd-guide** agent
 4. Architectural decision - Use **architect** agent
+5. Long feature (3+ phases done) - Use **oracle** drift-guard
+
+## Pre-Planning Reconnaissance (MANDATORY for complex features)
+
+Run scout + researcher IN PARALLEL before planner. Skip for: trivial fixes, single-file edits, config changes.
+
+```
+Scout (codebase recon):      writes → context.md
+Researcher (external docs):  writes → external-reference.md
+Planner:                     reads both → produces plan
+```
+
+Scout answers: What files are relevant? What patterns already exist? What tests cover this area?
+Researcher answers: What do the docs say? Are there breaking changes? What is the current API?
+
+## Oracle — Drift Guard
+
+Run oracle after every 3 implementation phases in complex features.
+
+Oracle's job:
+1. Read forked context + current trajectory
+2. Check for contradictions against prior decisions
+3. Output: inherited decisions | diagnosis | drift/contradiction check | recommendation | risks | what to decide
+
+Key principle: **Consistency trumps novelty unless context strongly supports revision.**
+
+Oracle never implements. It anchors. If oracle finds drift, STOP and realign before continuing.
+
+## Fresh-Context Code Review
+
+Code reviewer MUST spawn with zero conversation history — read only diff + repo files directly.
+No inherited session state.
+
+Rules:
+- Max 3 review rounds; stop early if no blockers found
+- Dynamic angle selection based on change type:
+  - DB migration → add data-safety angle
+  - Auth change → security angle mandatory
+  - UI change → UX/accessibility angle
+  - Any change → correctness + tests + simplicity always
+- Synthesize findings into: fixes-now | optional-enhancements | deferred-with-reasoning
+- Autofix mode: apply only HIGH+ priority fixes without menu
+
+## Meta-Prompt Handoff Standard
+
+Every agent handoff produces a compact meta-prompt (not raw context dump):
+```
+Outcome: <concrete result the next agent must produce>
+Context: <relevant files + line numbers + key patterns>
+Constraints: <hard limits — do not cross>
+Success criteria: <how to verify the outcome>
+Validation: <commands/checks to run>
+Escalation: <when to stop and ask vs. proceed>
+```
+
+Write to `/handoff/meta-prompt.md` in the worktree. Downstream agents read the file, not conversation history.
+
+## Worker Discipline
+
+When implementing (writing code):
+- Smallest correct change — do not rewrite what is not broken
+- Follow existing patterns — no speculative refactors
+- No placeholder code — implement fully or escalate
+- No silent scope expansion — escalate unapproved architectural decisions
+- No success summaries without corresponding edits
+
+Escalation triggers: implementation gaps, unapproved product choices, decisions outside original approval.
 
 ## Parallel Task Execution
 
@@ -132,6 +204,14 @@ The Feature Implementation Workflow describes the development pipeline: research
 
 ## Feature Implementation Workflow
 
+-1. **Scout + Researcher** _(parallel recon before planning — skip for trivial/single-file fixes)_
+   - Run **scout** (codebase recon) + **researcher** (external docs) in PARALLEL
+   - Scout writes findings to `context.md` in worktree
+   - Researcher writes to `external-reference.md`
+   - Scout answers: relevant files, existing patterns, test coverage
+   - Researcher answers: current API behavior, breaking changes, library versions
+   - Planner reads both before producing plan — eliminates cold-start planning
+
 0. **Research & Reuse** _(mandatory before any new implementation)_
    - **GitHub code search first:** Run `gh search repos` and `gh search code` to find existing implementations, templates, and patterns before writing anything new.
    - **Library docs second:** Use Context7 or primary vendor docs to confirm API behavior, package usage, and version-specific details before implementing.
@@ -145,6 +225,7 @@ The Feature Implementation Workflow describes the development pipeline: research
    - Generate planning docs before coding: PRD, architecture, system_design, tech_doc, task_list
    - Identify dependencies and risks
    - Break down into phases
+   - Check `CONTEXT.md` for project-specific domain terms and ADRs before planning
 
 2. **TDD Approach**
    - Use **tdd-guide** agent
@@ -154,7 +235,8 @@ The Feature Implementation Workflow describes the development pipeline: research
    - Verify 80%+ coverage
 
 3. **Code Review**
-   - Use **code-reviewer** agent immediately after writing code
+   - Use **code-reviewer** agent immediately after writing code (spawn fresh — no session history)
+   - Max 3 review rounds; stop early if no blockers
    - Address CRITICAL and HIGH issues
    - Fix MEDIUM issues when possible
 
@@ -516,6 +598,18 @@ Every 10 tool-use turns: assess context bloat.
 - Point at logs, errors, failing tests – then resolve them
 - Zero context switching required from the user
 - Go fix failing CI tests without being told how
+
+## 7. Fail-Closed for Destructive Operations
+- If context is missing or ambiguous on ANY destructive operation: DENY and ask
+- Destructive = delete, drop, truncate, force-push, reset --hard, rm -rf, overwrite without backup
+- "I think this is safe" is not good enough — confirm explicitly
+- Prefer reversible operations; if irreversible, confirm scope before executing
+
+## 8. CONTEXT.md — Project Shared Language
+- Every project should have a `CONTEXT.md` with: domain terms + Architecture Decision Records (ADRs)
+- Read CONTEXT.md before planning any feature in an unfamiliar codebase
+- Update CONTEXT.md when new ADRs are made or domain terms are defined
+- Format: glossary of domain terms + numbered ADR list (decision + rationale + date)
 
 ---
 
