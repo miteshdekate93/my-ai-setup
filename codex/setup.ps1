@@ -4,11 +4,27 @@
 
 Write-Host "Setting up OpenAI Codex CLI configuration..."
 
+function Get-NpmCommand {
+    $npmCmd = Get-Command npm.cmd -ErrorAction SilentlyContinue
+    if ($npmCmd) { return $npmCmd.Source }
+
+    $npm = Get-Command npm -ErrorAction SilentlyContinue
+    if ($npm) { return $npm.Source }
+
+    return $null
+}
+
+$npmCommand = Get-NpmCommand
+
 # ── Install Codex CLI if missing ──────────────────────────────────────────────
 if (-not (Get-Command codex -ErrorAction SilentlyContinue)) {
-    Write-Host "Installing Codex CLI..."
-    npm install -g @openai/codex
-    Write-Host "Codex CLI installed."
+    if (-not $npmCommand) {
+        Write-Warning "npm not found. Install Node.js/npm, then rerun setup."
+    } else {
+        Write-Host "Installing Codex CLI..."
+        & $npmCommand install -g @openai/codex
+        Write-Host "Codex CLI installed."
+    }
 } else {
     Write-Host "Codex CLI already installed."
 }
@@ -20,23 +36,57 @@ New-Item -ItemType Directory -Force -Path $codexDir | Out-Null
 @'
 # OpenAI Codex CLI Configuration
 
-# Default model — gpt-4.1 is best for coding tasks
-model = "gpt-4.1"
+# Strongest default coding model in current Codex catalog.
+model = "gpt-5.5"
 
-# Sandbox: "danger-full-access" lets Codex read/write/run anything (like Claude Code)
-# Options: "read-only" | "workspace-write" | "danger-full-access"
+# Fully autonomous mode for trusted repos.
 sandbox = "danger-full-access"
 
-# Approval: "never" = fully autonomous (like Claude Code auto-approve)
-# Options: "untrusted" | "on-request" | "never"
 ask_for_approval = "never"
 
-# Parallel tool calls for speed
+# Speed/context settings.
 supports_parallel_tool_calls = true
 
-# Max instruction file size
 project_doc_max_bytes = 65536
+
+[desktop]
+default-service-tier = "priority"
+
+[windows]
+sandbox = "elevated"
 '@ | Set-Content -Encoding UTF8 "$codexDir\config.toml"
+
+$reverseMortgagePath = "C:\_Mitesh\repos\reverse-mortgage"
+if (Test-Path $reverseMortgagePath) {
+@"
+
+[projects.'$reverseMortgagePath']
+trust_level = "trusted"
+"@ | Add-Content -Encoding UTF8 "$codexDir\config.toml"
+}
+
+# Install GitNexus and wire it into Codex MCP when available.
+if (-not (Get-Command gitnexus.cmd -ErrorAction SilentlyContinue)) {
+    if (-not $npmCommand) {
+        Write-Warning "npm not found. Skipping GitNexus install."
+    } else {
+        Write-Host "Installing GitNexus CLI..."
+        & $npmCommand install -g gitnexus@1.6.5
+    }
+}
+
+$gitnexusCmd = Get-Command gitnexus.cmd -ErrorAction SilentlyContinue
+if ((Get-Command codex -ErrorAction SilentlyContinue) -and $gitnexusCmd) {
+    $mcpList = (& codex mcp list 2>$null) -join "`n"
+    if ($mcpList -notmatch '(^|\s)gitnexus(\s|$)') {
+        Write-Host "Adding GitNexus MCP server to Codex..."
+        & codex mcp add gitnexus -- $gitnexusCmd.Source mcp
+    } else {
+        Write-Host "GitNexus MCP already configured."
+    }
+} else {
+    Write-Warning "GitNexus MCP not configured. Install gitnexus and run: codex mcp add gitnexus -- gitnexus.cmd mcp"
+}
 
 # ── $env:USERPROFILE\.codex\AGENTS.md — global instructions ──────────────────
 @'
@@ -825,15 +875,18 @@ Caveman compression active — responses terse but technically precise.
 param([Parameter(ValueFromRemainingArguments=$true)][string[]]$TaskArgs)
 if (-not $TaskArgs) { Write-Host 'Usage: codex-plan "<feature to plan>"'; exit 1 }
 $Task = $TaskArgs -join " "
-& codex "Plan this task. Output a numbered breakdown:
+$Prompt = @"
+Plan this task. Output a numbered breakdown:
 - What files change and why
 - Before vs after behavior
 - How to verify correctness
 - Risks and dependencies
 - Estimated complexity
-Be terse. No implementation yet — just the plan.
+Be terse. No implementation yet, just the plan.
 
-Task: $Task"
+Task: $Task
+"@
+& codex $Prompt
 '@ | Set-Content -Encoding UTF8 "$localBin\codex-plan.ps1"
 
 # codex-tdd
@@ -841,23 +894,27 @@ Task: $Task"
 param([Parameter(ValueFromRemainingArguments=$true)][string[]]$TaskArgs)
 if (-not $TaskArgs) { Write-Host 'Usage: codex-tdd "<logic to test>"'; exit 1 }
 $Task = $TaskArgs -join " "
-& codex "Write failing tests (RED phase of TDD) for this logic: $Task
+$Prompt = @"
+Write failing tests (RED phase of TDD) for this logic: $Task
 
 Rules:
 - Tests must FAIL before any implementation exists
 - Cover: happy path, edge cases, error cases
 - Use the project's existing test framework
 - Clear test names that describe expected behavior
-- DO NOT write implementation — tests only
+- DO NOT write implementation, tests only
 
-After writing, run the tests and confirm they fail."
+After writing, run the tests and confirm they fail.
+"@
+& codex $Prompt
 '@ | Set-Content -Encoding UTF8 "$localBin\codex-tdd.ps1"
 
 # codex-review
 @'
 $Changed = (git diff --name-only HEAD 2>$null) -join ", "
 if (-not $Changed) { $Changed = "all files" }
-& codex "Review these changed files for code quality: $Changed
+$Prompt = @"
+Review these changed files for code quality: $Changed
 
 Check for:
 - Unclear names (variables, functions, files)
@@ -868,8 +925,10 @@ Check for:
 - Deep nesting (>4 levels)
 - Missing edge cases
 
-Output findings as: CRITICAL / HIGH / MEDIUM / LOW
-Fix CRITICAL and HIGH immediately. Be terse — skip files with no issues."
+Output findings as: CRITICAL / HIGH / MEDIUM / LOW.
+Fix CRITICAL and HIGH immediately. Be terse, skip files with no issues.
+"@
+& codex $Prompt
 '@ | Set-Content -Encoding UTF8 "$localBin\codex-review.ps1"
 
 # codex-security
@@ -959,7 +1018,7 @@ ANTHROPIC_API_KEY=sk-ant-...
 Write-Host "Stash config: $stashDir (run docker compose up -d for cross-session memory)"
 
 Write-Host ""
-Write-Host "Scripts installed to $localBin:"
+Write-Host "Scripts installed to ${localBin}:"
 Write-Host "  codex-task `"<task>`"   -- full pipeline (plan->TDD->implement->review->security)"
 Write-Host "  codex-plan `"<task>`"   -- planning only"
 Write-Host "  codex-tdd `"<task>`"    -- write failing tests first"
@@ -971,9 +1030,9 @@ $ghInstalled = Get-Command gh -ErrorAction SilentlyContinue
 if ($ghInstalled) {
     gh auth status 2>&1 | Out-Null
     if ($LASTEXITCODE -eq 0) {
-        Write-Host "✓ GitHub authenticated — codex-task can push branches and create PRs automatically."
+        Write-Host "GitHub authenticated - codex-task can push branches and create PRs automatically."
     } else {
-        Write-Host "⚠ GitHub not authenticated."
+        Write-Host "GitHub not authenticated."
         Write-Host ""
         Write-Host "  codex-task will still do all code work (branch, implement, test, review)."
         Write-Host "  It just can't push or create PRs automatically."
@@ -984,10 +1043,10 @@ if ($ghInstalled) {
         Write-Host "  (choose GitHub.com -> HTTPS -> Login with a web browser)"
     }
 } else {
-    Write-Host "⚠ gh CLI not found. Install from: https://cli.github.com/"
+    Write-Host "gh CLI not found. Install from: https://cli.github.com/"
     Write-Host "  Then run: gh auth login"
 }
 Write-Host ""
 Write-Host "Reload your PowerShell profile to pick up PATH changes:"
-Write-Host "  . `$PROFILE"
+Write-Host '  . $PROFILE'
 Write-Host "================================================"

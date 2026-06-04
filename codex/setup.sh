@@ -22,7 +22,7 @@ cat > "$HOME/.codex/config.toml" << 'EOF'
 # OpenAI Codex CLI Configuration
 
 # Default model — gpt-4.1 is best for coding tasks
-model = "gpt-4.1"
+model = "gpt-5.5"
 
 # Sandbox: "danger-full-access" lets Codex read/write/run anything (like Claude Code)
 # Options: "read-only" | "workspace-write" | "danger-full-access"
@@ -37,7 +37,27 @@ supports_parallel_tool_calls = true
 
 # Max instruction file size (32 KiB default)
 project_doc_max_bytes = 65536
+
+[desktop]
+default-service-tier = "priority"
 EOF
+
+# Install GitNexus and wire it into Codex MCP when available.
+if ! command -v gitnexus &>/dev/null; then
+  echo "Installing GitNexus CLI..."
+  npm install -g gitnexus@1.6.5 || echo "Warning: GitNexus install failed; run: npm install -g gitnexus@1.6.5"
+fi
+
+if command -v codex &>/dev/null && command -v gitnexus &>/dev/null; then
+  if ! codex mcp list 2>/dev/null | grep -qE '(^|[[:space:]])gitnexus([[:space:]]|$)'; then
+    echo "Adding GitNexus MCP server to Codex..."
+    codex mcp add gitnexus -- "$(command -v gitnexus)" mcp || echo "Warning: GitNexus MCP setup failed; run: codex mcp add gitnexus -- gitnexus mcp"
+  else
+    echo "GitNexus MCP already configured."
+  fi
+else
+  echo "Warning: GitNexus MCP not configured. Install gitnexus and run: codex mcp add gitnexus -- gitnexus mcp"
+fi
 
 # ── ~/.codex/AGENTS.md — global instructions (equivalent to ~/.claude/rules/) ─
 cat > "$HOME/.codex/AGENTS.md" << 'EOF'

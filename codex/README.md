@@ -22,6 +22,7 @@ bash codex/setup.sh
 | `~/.codex/AGENTS.md` | Global instructions (all rules in one file) — Oracle drift-guard, scout+researcher pre-planning, worker discipline, fail-closed destructive ops, CONTEXT.md glossary |
 | `~/.codex/memory/L2/` | Entity fact memory: POLE+O facts about people, systems, events |
 | `~/.codex/memory/L3/` | SOP memory directory (shared pattern with Claude setup) |
+| GitNexus MCP | Code intelligence MCP server for impact analysis, context, query, and change detection |
 | `~/.local/bin/codex-task` | Full pipeline orchestrator (equivalent to Claude's `/task`) |
 | `~/.local/bin/codex-plan` | Planning only |
 | `~/.local/bin/codex-tdd` | Write failing tests first |
@@ -187,18 +188,31 @@ L3 memory is compatible with Claude Code — SOPs written by one tool are readab
 
 ## Model Selection
 
-Default model is `gpt-4.1`. Switch mid-session with `/model`.
+Default model is `gpt-5.5`. Switch mid-session with `/model`.
 
 | Task | Model | Switch |
 |------|-------|--------|
 | Simple fix, single file | gpt-4.1-mini | `/model gpt-4.1-mini` |
-| Main development (default) | gpt-4.1 | — |
+| Main development (default) | gpt-5.5 | — |
 | Complex architecture, deep reasoning | o3 | `/model o3` |
 
 Change default in `~/.codex/config.toml`:
 ```toml
 model = "gpt-4.1-mini"   # cheaper for light work
 ```
+
+---
+
+## GitNexus MCP
+
+Setup installs `gitnexus@1.6.5` globally when possible, then runs:
+
+```bash
+codex mcp add gitnexus -- gitnexus mcp
+```
+
+On Windows, PowerShell execution policy may block `npm.ps1` or `npx.ps1`; use `npm.cmd` and `npx.cmd`.
+If package-manager install is blocked by corporate policy, install GitNexus through the approved internal software channel, then rerun setup.
 
 ---
 

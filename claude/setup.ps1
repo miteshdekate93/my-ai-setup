@@ -1501,7 +1501,8 @@ if (-not (Get-Command archon -ErrorAction SilentlyContinue) -and -not (Test-Path
 # ── Archon config — point to Claude binary ────────────────────────────────────
 $archonDir = "$env:USERPROFILE\.archon"
 New-Item -ItemType Directory -Force -Path $archonDir | Out-Null
-$claudeBin = (Get-Command claude -ErrorAction SilentlyContinue)?.Source ?? "$env:USERPROFILE\.local\bin\claude.exe"
+$claudeCmd = Get-Command claude -ErrorAction SilentlyContinue
+$claudeBin = if ($claudeCmd) { $claudeCmd.Source } else { "$env:USERPROFILE\.local\bin\claude.exe" }
 @"
 assistants:
   claude:
@@ -1609,14 +1610,14 @@ Write-Host ""
 Write-Host "Checking GitHub auth status..."
 $ghInstalled = Get-Command gh -ErrorAction SilentlyContinue
 if ($ghInstalled) {
-    $ghStatus = gh auth status 2>&1
+    gh auth status 2>&1 | Out-Null
     if ($LASTEXITCODE -eq 0) {
-        Write-Host "✓ GitHub authenticated — Archon can push branches and create PRs automatically."
+        Write-Host "GitHub authenticated - Archon can push branches and create PRs automatically."
     } else {
-        Write-Host "⚠ GitHub not authenticated."
+        Write-Host "GitHub not authenticated."
         Write-Host ""
         Write-Host "  /task will still do all code work (branch, implement, test, review)."
-        Write-Host "  It just can't push or create PRs automatically."
+        Write-Host "  It cannot push or create PRs automatically."
         Write-Host "  At end of every /task it outputs the exact git commands to run manually."
         Write-Host ""
         Write-Host "  To enable full automation, run once:"
@@ -1624,7 +1625,7 @@ if ($ghInstalled) {
         Write-Host "  (choose GitHub.com -> HTTPS -> Login with a web browser)"
     }
 } else {
-    Write-Host "⚠ gh CLI not found. Install from: https://cli.github.com/"
+    Write-Host "gh CLI not found. Install from: https://cli.github.com/"
     Write-Host "  Then run: gh auth login"
 }
 Write-Host "================================================"

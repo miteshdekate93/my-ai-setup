@@ -1145,7 +1145,8 @@ if (-not (Get-Command archon -ErrorAction SilentlyContinue) -and -not (Test-Path
 # ── Archon config — point to Claude binary ────────────────────────────────────
 $archonDir = "$env:USERPROFILE\.archon"
 New-Item -ItemType Directory -Force -Path $archonDir | Out-Null
-$claudeBin = (Get-Command claude -ErrorAction SilentlyContinue)?.Source ?? "$env:USERPROFILE\.local\bin\claude.exe"
+$claudeCmd = Get-Command claude -ErrorAction SilentlyContinue
+$claudeBin = if ($claudeCmd) { $claudeCmd.Source } else { "$env:USERPROFILE\.local\bin\claude.exe" }
 @"
 assistants:
   claude:
