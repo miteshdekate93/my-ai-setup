@@ -20,6 +20,7 @@ bash codex/setup.sh
 |------|-------------|
 | `~/.codex/config.toml` | Model, sandbox mode, approval policy |
 | `~/.codex/AGENTS.md` | Global instructions (all rules in one file) — Oracle drift-guard, scout+researcher pre-planning, worker discipline, fail-closed destructive ops, CONTEXT.md glossary |
+| `~/.codex/skills/bmad-*` | Global BMAD Codex skills for planning, PRD/story work, quick dev, review, research, and documentation |
 | `~/.codex/memory/L2/` | Entity fact memory: POLE+O facts about people, systems, events |
 | `~/.codex/memory/L3/` | SOP memory directory (shared pattern with Claude setup) |
 | GitNexus MCP | Code intelligence MCP server for impact analysis, context, query, and change detection |
@@ -213,6 +214,42 @@ codex mcp add gitnexus -- gitnexus mcp
 
 On Windows, PowerShell execution policy may block `npm.ps1` or `npx.ps1`; use `npm.cmd` and `npx.cmd`.
 If package-manager install is blocked by corporate policy, install GitNexus through the approved internal software channel, then rerun setup.
+
+---
+
+## BMAD Global Skills
+
+Setup copies bundled BMAD skills from `codex/skills/bmad-*` into:
+
+```bash
+~/.codex/skills/bmad-*
+```
+
+These become available to new Codex sessions as global skills.
+
+Use BMAD when work needs structured discovery, planning, story execution, review, or documentation:
+
+```text
+Use bmad-quick-dev for this bug fix. Confirm root cause before edits. Keep change scoped.
+```
+
+```text
+Use bmad-dev-story for this story file. Follow acceptance criteria and update sprint status only if asked.
+```
+
+```text
+Use bmad-code-review. Review changed files for bugs, regressions, security, performance, and missing validation.
+```
+
+Most useful daily BMAD skills:
+
+- `bmad-quick-dev` - bug fixes and small implementation work
+- `bmad-dev-story` - prepared story implementation
+- `bmad-code-review` - structured code review
+- `bmad-correct-course` - scope change or plan drift
+- `bmad-create-story` - turn requirements into implementable story
+- `bmad-technical-research` - research current technical approach
+- `bmad-generate-project-context` - create project context docs
 
 ---
 

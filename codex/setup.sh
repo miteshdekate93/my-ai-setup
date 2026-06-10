@@ -6,6 +6,7 @@ set -euo pipefail
 # Usage: bash codex/setup.sh
 
 echo "Setting up OpenAI Codex CLI configuration..."
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # ── Install Codex CLI if missing ──────────────────────────────────────────────
 if ! command -v codex &>/dev/null; then
@@ -758,6 +759,27 @@ EOF
 mkdir -p "$HOME/.codex/memory/L2"
 mkdir -p "$HOME/.codex/memory/L3"
 echo "Memory directories created: ~/.codex/memory/L2/ and ~/.codex/memory/L3/"
+
+# Global BMAD Codex skills
+BMAD_SOURCE="$SCRIPT_DIR/skills"
+BMAD_TARGET="$HOME/.codex/skills"
+mkdir -p "$BMAD_TARGET"
+if [ -d "$BMAD_SOURCE" ]; then
+  BMAD_COUNT=0
+  while IFS= read -r skill_dir; do
+    skill_name="$(basename "$skill_dir")"
+    case "$skill_name" in
+      bmad-*) ;;
+      *) echo "Unsafe BMAD skill name: $skill_name"; exit 1 ;;
+    esac
+    rm -rf "$BMAD_TARGET/$skill_name"
+    cp -R "$skill_dir" "$BMAD_TARGET/"
+    BMAD_COUNT=$((BMAD_COUNT + 1))
+  done < <(find "$BMAD_SOURCE" -mindepth 1 -maxdepth 1 -type d -name 'bmad-*' | sort)
+  echo "BMAD Codex skills installed globally: $BMAD_COUNT skills -> $BMAD_TARGET"
+else
+  echo "Warning: BMAD skill source not found: $BMAD_SOURCE"
+fi
 
 # ── codex-task — full pipeline orchestrator (equivalent to /task in Claude) ───
 mkdir -p "$HOME/.local/bin"

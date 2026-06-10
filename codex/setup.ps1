@@ -753,6 +753,29 @@ New-Item -ItemType Directory -Force -Path "$codexDir\memory\L2" | Out-Null
 New-Item -ItemType Directory -Force -Path "$codexDir\memory\L3" | Out-Null
 Write-Host "Memory directories created: $codexDir\memory\L2 and $codexDir\memory\L3"
 
+# Global BMAD Codex skills
+$bmadSource = Join-Path $PSScriptRoot "skills"
+$bmadTarget = Join-Path $codexDir "skills"
+New-Item -ItemType Directory -Force -Path $bmadTarget | Out-Null
+if (Test-Path -LiteralPath $bmadSource) {
+    $bmadTargetRoot = (Resolve-Path -LiteralPath $bmadTarget).Path
+    $bmadCount = 0
+    Get-ChildItem -LiteralPath $bmadSource -Directory -Filter "bmad-*" | ForEach-Object {
+        $targetPath = Join-Path $bmadTargetRoot $_.Name
+        if (-not $targetPath.StartsWith($bmadTargetRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
+            throw "Unsafe BMAD skill target: $targetPath"
+        }
+        if (Test-Path -LiteralPath $targetPath) {
+            Remove-Item -LiteralPath $targetPath -Recurse -Force
+        }
+        Copy-Item -LiteralPath $_.FullName -Destination $bmadTargetRoot -Recurse -Force
+        $bmadCount++
+    }
+    Write-Host "BMAD Codex skills installed globally: $bmadCount skills -> $bmadTarget"
+} else {
+    Write-Warning "BMAD skill source not found: $bmadSource"
+}
+
 # ── Helper scripts to $env:USERPROFILE\.local\bin\ ────────────────────────────
 $localBin = "$env:USERPROFILE\.local\bin"
 New-Item -ItemType Directory -Force -Path $localBin | Out-Null
