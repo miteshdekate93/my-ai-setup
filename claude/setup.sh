@@ -6,6 +6,7 @@ set -euo pipefail
 # Usage: bash my-claude-setup.sh
 
 echo "Setting up Claude Code configuration..."
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # ── ~/.claude/settings.json ──────────────────────────────────────────────────
 mkdir -p "$HOME/.claude"
@@ -1571,6 +1572,27 @@ EOF
 mkdir -p "$HOME/.claude/memory/L2"
 mkdir -p "$HOME/.claude/memory/L3"
 echo "Memory directories created: ~/.claude/memory/L2/ and ~/.claude/memory/L3/"
+
+# Global BMAD Claude skills
+BMAD_SOURCE="$SCRIPT_DIR/skills"
+BMAD_TARGET="$HOME/.claude/skills"
+mkdir -p "$BMAD_TARGET"
+if [ -d "$BMAD_SOURCE" ]; then
+  BMAD_COUNT=0
+  while IFS= read -r skill_dir; do
+    skill_name="$(basename "$skill_dir")"
+    case "$skill_name" in
+      bmad-*) ;;
+      *) echo "Unsafe BMAD skill name: $skill_name"; exit 1 ;;
+    esac
+    rm -rf "$BMAD_TARGET/$skill_name"
+    cp -R "$skill_dir" "$BMAD_TARGET/"
+    BMAD_COUNT=$((BMAD_COUNT + 1))
+  done < <(find "$BMAD_SOURCE" -mindepth 1 -maxdepth 1 -type d -name 'bmad-*' | sort)
+  echo "BMAD Claude skills installed globally: $BMAD_COUNT skills -> $BMAD_TARGET"
+else
+  echo "Warning: BMAD skill source not found: $BMAD_SOURCE"
+fi
 
 # ── Archon CLI install ────────────────────────────────────────────────────────
 if ! command -v archon &>/dev/null && [ ! -f "$HOME/.local/bin/archon" ]; then

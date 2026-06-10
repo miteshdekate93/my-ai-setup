@@ -38,6 +38,7 @@ Restart Claude Code after running.
 | `~/.claude/rules/dotnet.md` | .NET DDD + Vertical Slice Architecture patterns |
 | `~/.claude/commands/task.md` | `/task` — full 8-phase pipeline command |
 | `~/.claude/commands/gitnexus-init.md` | `/gitnexus-init` — codebase intelligence setup |
+| `~/.claude/skills/bmad-*` | Global BMAD skills for planning, PRD/story work, quick dev, review, research, and documentation |
 | `~/.claude/memory/L2/` | Entity fact memory (POLE+O) |
 | `~/.claude/memory/L3/` | SOP memory directory |
 | `~/.archon/config.yaml` | Archon config pointing to Claude binary |
@@ -59,6 +60,38 @@ These are available in every Claude Code session after setup.
 | `/plan "feature X"` | Breakdown: files, before/after, risks, dependencies |
 | `/tdd "logic X"` | Write failing tests first (RED phase) |
 | `/gitnexus-init` | Index codebase for dependency analysis + impact tracing |
+
+### BMAD skills
+
+Setup copies bundled BMAD skills from `claude/skills/bmad-*` into:
+
+```bash
+~/.claude/skills/bmad-*
+```
+
+Use BMAD when work needs structured discovery, planning, story execution, review, or documentation:
+
+```text
+Use bmad-quick-dev for this bug fix. Confirm root cause before edits. Keep change scoped.
+```
+
+```text
+Use bmad-dev-story for this story file. Follow acceptance criteria and update sprint status only if asked.
+```
+
+```text
+Use bmad-code-review. Review changed files for bugs, regressions, security, performance, and missing validation.
+```
+
+Most useful daily BMAD skills:
+
+- `bmad-quick-dev` - bug fixes and small implementation work
+- `bmad-dev-story` - prepared story implementation
+- `bmad-code-review` - structured code review
+- `bmad-correct-course` - scope change or plan drift
+- `bmad-create-story` - turn requirements into implementable story
+- `bmad-technical-research` - research current technical approach
+- `bmad-generate-project-context` - create project context docs
 
 ### ECC Skills (from everything-claude-code marketplace)
 

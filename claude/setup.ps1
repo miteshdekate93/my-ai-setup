@@ -1481,6 +1481,29 @@ New-Item -ItemType Directory -Force -Path "$claudeDir\memory\L2" | Out-Null
 New-Item -ItemType Directory -Force -Path "$claudeDir\memory\L3" | Out-Null
 Write-Host "Memory directories created: $claudeDir\memory\L2 and $claudeDir\memory\L3"
 
+# Global BMAD Claude skills
+$bmadSource = Join-Path $PSScriptRoot "skills"
+$bmadTarget = Join-Path $claudeDir "skills"
+New-Item -ItemType Directory -Force -Path $bmadTarget | Out-Null
+if (Test-Path -LiteralPath $bmadSource) {
+    $bmadTargetRoot = (Resolve-Path -LiteralPath $bmadTarget).Path
+    $bmadCount = 0
+    Get-ChildItem -LiteralPath $bmadSource -Directory -Filter "bmad-*" | ForEach-Object {
+        $targetPath = Join-Path $bmadTargetRoot $_.Name
+        if (-not $targetPath.StartsWith($bmadTargetRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
+            throw "Unsafe BMAD skill target: $targetPath"
+        }
+        if (Test-Path -LiteralPath $targetPath) {
+            Remove-Item -LiteralPath $targetPath -Recurse -Force
+        }
+        Copy-Item -LiteralPath $_.FullName -Destination $bmadTargetRoot -Recurse -Force
+        $bmadCount++
+    }
+    Write-Host "BMAD Claude skills installed globally: $bmadCount skills -> $bmadTarget"
+} else {
+    Write-Warning "BMAD skill source not found: $bmadSource"
+}
+
 # ── Archon CLI install ────────────────────────────────────────────────────────
 $archonPath = "$env:USERPROFILE\.local\bin\archon.exe"
 if (-not (Get-Command archon -ErrorAction SilentlyContinue) -and -not (Test-Path $archonPath)) {
@@ -1600,7 +1623,7 @@ Write-Host "     claude mcp add stash --sse http://localhost:8765/sse"
 try {
     $response = Invoke-WebRequest -Uri "http://localhost:8765/health" -TimeoutSec 2 -ErrorAction Stop
     & claude mcp add stash --sse http://localhost:8765/sse 2>$null
-    Write-Host "✓ Stash MCP detected and added to Claude Code"
+    Write-Host "Stash MCP detected and added to Claude Code"
 } catch {}
 
 Write-Host ""
@@ -1616,7 +1639,7 @@ if ($ghInstalled) {
     } else {
         Write-Host "GitHub not authenticated."
         Write-Host ""
-        Write-Host "  /task will still do all code work (branch, implement, test, review)."
+        Write-Host "  /task will still do all code work: branch, implement, test, review."
         Write-Host "  It cannot push or create PRs automatically."
         Write-Host "  At end of every /task it outputs the exact git commands to run manually."
         Write-Host ""

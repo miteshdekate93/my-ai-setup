@@ -53,6 +53,7 @@ bash codex/setup.sh
 | Global config | `~/.claude/settings.json` | `~/.codex/config.toml` |
 | Global rules/instructions | `~/.claude/rules/*.md` | `~/.codex/AGENTS.md` |
 | Project instructions | `CLAUDE.md` | `AGENTS.md` |
+| Global BMAD skills | `~/.claude/skills/bmad-*` | `~/.codex/skills/bmad-*` |
 | Full pipeline command | `/task` (slash command) | `codex-task` (CLI script) |
 | Planning command | `/plan` (ECC skill) | `codex-plan` |
 | TDD command | `/tdd` (ECC skill) | `codex-tdd` |

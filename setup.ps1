@@ -1125,6 +1125,33 @@ Always output these commands even if GitHub is authenticated.
 New-Item -ItemType Directory -Force -Path "$claudeDir\memory\L3" | Out-Null
 Write-Host "L3 memory directory created: $claudeDir\memory\L3"
 
+# Global BMAD Claude skills
+$bmadSourceCandidates = @(
+    (Join-Path $PSScriptRoot "claude\skills"),
+    (Join-Path $PSScriptRoot "skills")
+)
+$bmadSource = $bmadSourceCandidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
+$bmadTarget = Join-Path $claudeDir "skills"
+New-Item -ItemType Directory -Force -Path $bmadTarget | Out-Null
+if ($bmadSource) {
+    $bmadTargetRoot = (Resolve-Path -LiteralPath $bmadTarget).Path
+    $bmadCount = 0
+    Get-ChildItem -LiteralPath $bmadSource -Directory -Filter "bmad-*" | ForEach-Object {
+        $targetPath = Join-Path $bmadTargetRoot $_.Name
+        if (-not $targetPath.StartsWith($bmadTargetRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
+            throw "Unsafe BMAD skill target: $targetPath"
+        }
+        if (Test-Path -LiteralPath $targetPath) {
+            Remove-Item -LiteralPath $targetPath -Recurse -Force
+        }
+        Copy-Item -LiteralPath $_.FullName -Destination $bmadTargetRoot -Recurse -Force
+        $bmadCount++
+    }
+    Write-Host "BMAD Claude skills installed globally: $bmadCount skills -> $bmadTarget"
+} else {
+    Write-Warning "BMAD skill source not found. Expected claude\skills or skills beside setup.ps1."
+}
+
 # ── Archon CLI install ────────────────────────────────────────────────────────
 $archonPath = "$env:USERPROFILE\.local\bin\archon.exe"
 if (-not (Get-Command archon -ErrorAction SilentlyContinue) -and -not (Test-Path $archonPath)) {
