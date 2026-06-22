@@ -77,7 +77,8 @@ if (-not (Get-Command gitnexus.cmd -ErrorAction SilentlyContinue)) {
 
 $gitnexusCmd = Get-Command gitnexus.cmd -ErrorAction SilentlyContinue
 if ((Get-Command codex -ErrorAction SilentlyContinue) -and $gitnexusCmd) {
-    $mcpList = (& codex mcp list 2>$null) -join "`n"
+    $mcpList = (& codex mcp list 2>$null) -join "
+"
     if ($mcpList -notmatch '(^|\s)gitnexus(\s|$)') {
         Write-Host "Adding GitNexus MCP server to Codex..."
         & codex mcp add gitnexus -- $gitnexusCmd.Source mcp
@@ -212,6 +213,53 @@ Before marking work complete:
 
 ---
 
+# Smart Agent Defaults
+
+Even simple prompts run as senior-agent work:
+1. Classify request: question, bug, feature, refactor, review, deploy, data/DB.
+2. Check git status before edits.
+3. Read project instructions, CONTEXT.md, tasks/lessons.md, and relevant L3 SOP memory when present.
+4. Use GitNexus context/impact before shared symbol, API route, DB, or cross-module edits.
+5. Search existing code with rg/git grep before creating helpers, components, services, SQL, or Azure scripts.
+6. Use smallest safe change. Prefer reuse/native platform/config over new abstraction or dependency.
+7. Run focused existing checks. Add tests only when user asks, repo pattern expects it, or bug/high-risk behavior needs regression coverage.
+8. Do not commit or push unless explicitly asked.
+
+---
+
+# Technology Focus
+
+Default stack: React, Angular, TypeScript, C#/.NET, ASP.NET Core, Azure DevOps/IIS/App Services/Key Vault/App Configuration, SQL Server, Oracle, and Claude/Codex automation.
+
+Do not propose Python implementations, PyPI packages, or Python scripts unless the repo is already Python or user explicitly asks. For automation prefer PowerShell, Node/TypeScript, C#/.NET CLI, SQL, Azure CLI, or Azure PowerShell.
+
+Frontend default: use native HTML/CSS/browser APIs, Angular/React built-in patterns, existing component libraries, and CSS/container queries/custom properties before JavaScript render loops or new packages.
+
+Backend default: follow existing .NET solution layout, dependency injection, configuration, logging, EF/Dapper/repository patterns already in repo, and minimal scoped changes.
+
+DB default: use parameterized SQL, transaction safety, rollback notes, least-privilege grants, repo migration/script pattern, and PII/secrets protection for SQL Server and Oracle.
+
+Azure default: use existing pipeline, appsettings, Key Vault/App Configuration, IaC, and deployment scripts before introducing new tooling.
+
+---
+
+# Minimal Safe Ladder
+
+Before coding: prove need, reuse existing code, use framework/platform, use installed dependency, then add smallest new code.
+Never simplify away validation, authorization, PII/secret safety, SQL injection protection, error handling, accessibility, auditability, or requested behavior.
+
+---
+
+# Tool And Token Discipline
+
+- Start with GitNexus, rg, git grep, and targeted file reads; avoid whole-repo or whole-file reads unless needed.
+- Prefer llms.txt, official docs, vendor docs, and compact project docs when available.
+- Batch independent reads/searches.
+- Use tool evidence before root-cause or impact claims.
+- For architecture-heavy work, check existing ADRs/diagrams and ask whether LikeC4/C4/docs should be updated.
+- For CRUD/internal admin apps, prefer schema-first patterns and existing generated/configured UI paths before hand-building screens.
+
+---
 # Development Workflow
 
 ## Feature Implementation Workflow
@@ -231,9 +279,9 @@ Before marking work complete:
    - **Layer 3 — First principles:** Original reasoning about the specific problem. Most valuable. The Eureka Moment: understanding what everyone does and WHY, then finding why the conventional approach is wrong for this case.
 
    **Concrete steps:**
-   - Run `gh search repos` and `gh search code` to find existing implementations
+   - Search local repo first with rg/git grep, then use GitHub search only when adopting a library or proven skeleton helps
    - Use vendor docs to confirm API behavior before implementing
-   - Search npm/PyPI/crates.io before writing utility code
+   - Search npm, NuGet, Microsoft/Azure docs, Oracle docs, vendor docs, and existing repo code before writing utility code. Use PyPI/crates.io only when the repo is explicitly Python/Rust or the user asks.
    - Prefer adopting/porting a proven approach over writing net-new code
 
 1. **Plan First**
@@ -242,11 +290,11 @@ Before marking work complete:
    - Write numbered plan before coding
    - Check `CONTEXT.md` for domain terms and ADRs before planning
 
-2. **TDD Approach**
-   - Write tests first (RED)
-   - Implement to pass tests (GREEN)
-   - Refactor (IMPROVE)
-   - Verify 80%+ coverage
+2. **Testing And Verification**
+   - Run focused existing checks by default
+   - Add tests only when user asks, repo pattern expects it, or bug/high-risk behavior needs regression coverage
+   - Keep the existing test framework and naming pattern
+   - Report any verification gap clearly
 
 3. **Code Review**
    - Check unclear names, missing error handling, hardcoded values
@@ -280,22 +328,13 @@ Types: feat, fix, refactor, docs, test, chore, perf, ci
 
 ---
 
-# Testing Requirements
+# Testing And Verification
 
-## Minimum Test Coverage: 80%
+Default: run existing relevant checks. Do not create new unit, integration, or E2E tests unless the user asks, the repository already has a matching pattern for the touched behavior, or a bug/high-risk change needs regression coverage.
 
-Test Types (ALL required):
-1. **Unit Tests** - Individual functions, utilities, components
-2. **Integration Tests** - API endpoints, database operations
-3. **E2E Tests** - Critical user flows
+When adding tests, use the repo's existing framework and naming style, keep tests focused on changed behavior, cover the failing case first for bugs, and avoid broad test rewrites.
 
-## TDD Workflow (MANDATORY)
-1. Write test first (RED)
-2. Run test — it should FAIL
-3. Write minimal implementation (GREEN)
-4. Run test — it should PASS
-5. Refactor (IMPROVE)
-6. Verify coverage (80%+)
+When not adding tests, run the best available focused build/test/smoke command and report the verification gap.
 
 ---
 
@@ -367,11 +406,14 @@ Never use o3 for simple fixes — cost is 10x gpt-4.1-mini.
 
 # Context Budget Management
 
-- Never re-read a file already read in this session
-- Read only needed lines (targeted searches over full-file reads)
-- Batch independent operations together
-- Never re-run the same command twice
-- Summarize findings — never paste tool output verbatim into prose
+- Start with GitNexus, rg, git grep, and targeted file reads.
+- Never re-read a file already read in this session.
+- Read only needed lines before full files.
+- Prefer llms.txt, official docs, vendor docs, and compact project docs when available.
+- Batch independent operations together.
+- Never re-run the same command twice unless state changed.
+- Summarize findings; never paste tool output verbatim into prose.
+- Use L3 SOP memory before cold reasoning on repeat tasks.
 
 ---
 
@@ -512,12 +554,12 @@ When AI makes the marginal cost of completeness near-zero, do the complete thing
 
 ## Lakes vs Oceans
 
-- Lake = boilable: 100% test coverage, full feature, all edge cases. Do it.
+- Lake = boilable: full changed behavior, all relevant edge cases, focused verification. Do it.
 - Ocean = not boilable: rewriting an entire system unprompted. Flag it, don't do it.
 
 ## Always Boil These Lakes
 
-- Write all tests, not just happy path
+- Verify all changed behavior; add tests only when user asks, repo pattern expects it, or risk justifies regression coverage
 - Handle all error cases, not just the obvious one
 - Complete the feature, don't leave stubs
 - Fix the root cause, not just the symptom
@@ -525,7 +567,7 @@ When AI makes the marginal cost of completeness near-zero, do the complete thing
 ## Anti-Patterns
 
 - "Choose B - it's 90% there with less code" -> if A is correct, do A
-- "Defer tests to a follow-up PR" -> tests are the cheapest lake to boil
+- "No verification needed" -> run focused checks or explain the gap
 - "This would take 2 weeks" -> say "2 weeks human / ~1 hour AI-assisted"
 
 ## User Sovereignty
@@ -561,7 +603,7 @@ No fix without confirmed root cause. Four phases, mandatory in order.
 
 ## Phase 4 - Implement
 - Fix ONLY what the hypothesis points to
-- Write a regression test that would have caught this
+- Add a regression test only when user asks, repo pattern exists, or risk justifies it; otherwise document focused verification
 - Verify the fix resolves the original reproduction case
 
 Never implement a fix before completing Phase 3. No root cause = go back to Phase 1.
@@ -582,7 +624,7 @@ Never implement a fix before completing Phase 3. No root cause = go back to Phas
 
 ## Verification Before Done
 - Never mark a task complete without proving it works
-- Run tests, check logs, demonstrate correctness
+- Run focused checks, inspect logs when relevant, demonstrate correctness
 
 ## Self-Improvement Loop
 - After ANY correction from the user: update `tasks/lessons.md` with the pattern
@@ -639,7 +681,7 @@ Format: glossary of domain terms + numbered ADR list (decision + rationale + dat
 
 ### 4. Verification Before Done
 - Never mark a task complete without proving it works
-- Run tests, check logs, demonstrate correctness
+- Run focused checks, inspect logs when relevant, demonstrate correctness
 - Ask yourself: "Would a staff engineer approve this?"
 
 ### 5. Demand Elegance (Balanced)
@@ -680,7 +722,7 @@ Use the helper scripts installed by setup.ps1:
 ## Pipeline
 - `codex-task "implement X"` — Full pipeline: plan -> TDD -> implement -> review -> security -> SOP
 - `codex-plan "feature X"` — Planning only: breakdown + risks
-- `codex-tdd "test X"` — TDD phase: write failing tests first
+- `codex-tdd "test X"` - add focused tests when explicitly requested
 - `codex-review` — Code review on changed files
 - `codex-security` — Security scan on changed files
 
@@ -689,7 +731,7 @@ Use the helper scripts installed by setup.ps1:
 ### New Feature
 ```
 1. codex-plan "Build feature"      -> Clear breakdown
-2. codex-tdd "Logic test"          -> Tests force clarity
+2. Run focused checks              -> Verify touched behavior
 3. codex-task "implement X"        -> Full pipeline
 4. codex-review                    -> Catch issues early
 5. codex-security (if needed)      -> Verify safety
@@ -795,14 +837,13 @@ if (-not $TaskArgs) {
 
 $Task = $TaskArgs -join " "
 
-# Detect project stack
+# Detect project stack (focused daily stack)
 $Stack = "unknown"
-if (Test-Path "package.json") { $Stack = "Node/TypeScript" }
-elseif (Test-Path "go.mod") { $Stack = "Go" }
-elseif (Test-Path "Cargo.toml") { $Stack = "Rust" }
-elseif ((Test-Path "requirements.txt") -or (Test-Path "pyproject.toml")) { $Stack = "Python" }
-elseif ((Test-Path "build.gradle") -or (Test-Path "settings.gradle")) { $Stack = "Kotlin/Android" }
-elseif (Test-Path "pubspec.yaml") { $Stack = "Flutter/Dart" }
+if ((Test-Path "angular.json") -or ((Test-Path "package.json") -and (Select-String -Path "package.json" -Pattern 'angular' -Quiet -ErrorAction SilentlyContinue))) { $Stack = "Angular/TypeScript" }
+elseif ((Test-Path "package.json") -and (Select-String -Path "package.json" -Pattern 'react|next|vite' -Quiet -ErrorAction SilentlyContinue)) { $Stack = "React/TypeScript" }
+elseif ((Get-ChildItem -Path . -Filter "*.sln" -File -ErrorAction SilentlyContinue | Select-Object -First 1) -or (Get-ChildItem -Path . -Filter "*.csproj" -Recurse -File -ErrorAction SilentlyContinue | Select-Object -First 1)) { $Stack = "C#/.NET" }
+elseif (Get-ChildItem -Path . -Filter "*.sql" -Recurse -File -ErrorAction SilentlyContinue | Select-Object -First 1) { $Stack = "SQL/Database" }
+elseif (Test-Path "package.json") { $Stack = "Node/TypeScript" }
 
 # Check GitHub auth
 $GhStatus = "GH_NOT_AUTHED"
@@ -820,7 +861,12 @@ if (Test-Path $L3Dir) {
     if ($SopFile) {
         $SopContent = Get-Content $SopFile.FullName -Raw -ErrorAction SilentlyContinue
         if ($SopContent) {
-            $SopBlock = "## Recalled SOP from memory: $($SopFile.Name)`n`n$SopContent`n`nUse the steps and gotchas above as your starting pattern. Skip cold reasoning for anything already documented there.`n"
+            $SopBlock = "## Recalled SOP from memory: $($SopFile.Name)
+
+$SopContent
+
+Use the steps and gotchas above as your starting pattern. Skip cold reasoning for anything already documented there.
+"
         }
     }
 }
@@ -833,6 +879,16 @@ GitHub auth: $GhStatus
 $SopBlock
 
 Follow ALL phases below without asking for confirmation between them:
+
+## Always-On Smart Context
+- Run git status first and protect user changes.
+- Read AGENTS.md/CONTEXT.md/tasks/lessons.md when present.
+- Recall matching L3 SOP memory before cold reasoning.
+- Use GitNexus context/impact before shared symbols, APIs, DB scripts, or cross-module edits.
+- Search existing code with rg/git grep before creating helpers/components/services.
+- Prefer React, Angular, C#/.NET, Azure, SQL Server, and Oracle patterns. Do not propose Python unless this repo is Python or user asks.
+- Use native/platform/CSS/framework features before new dependencies.
+- If you see a better improvement outside scope, mention it and continue requested scope unless user approves expansion.
 
 ## Phase 1 — Branch
 Create a local git branch:
@@ -847,18 +903,17 @@ Break down the task:
 - Risks and dependencies
 Output a numbered list. This is the plan — proceed immediately.
 
-## Phase 3 — Tests First (RED)
-Write failing tests covering expected behavior. Run them — they MUST FAIL.
-If they pass before implementation: tests are wrong, fix them first.
+## Phase 3 - Verification Plan
+Identify focused existing checks for the touched area. Add tests only when user asked, repo pattern expects it, or bug/high-risk behavior needs regression coverage. For bugs, prefer one regression test when existing test pattern is clear.
 
 ## Phase 4 — Implement (GREEN)
-Write minimal code to pass tests.
+Write minimal scoped code for the verified behavior.
 Rules:
 - Functions <=20 lines, one responsibility
 - No mutation — new objects, never modify in-place
 - Explicit error handling — never swallow silently
 - No hardcoded values — constants or config
-Run tests — ALL must pass before continuing.
+Run focused build/test/smoke checks before continuing.
 
 ## Phase 5 — Code Review
 Check all changed files for:
@@ -1044,7 +1099,7 @@ Write-Host ""
 Write-Host "Scripts installed to ${localBin}:"
 Write-Host "  codex-task `"<task>`"   -- full pipeline (plan->TDD->implement->review->security)"
 Write-Host "  codex-plan `"<task>`"   -- planning only"
-Write-Host "  codex-tdd `"<task>`"    -- write failing tests first"
+Write-Host "  codex-tdd `"<task>`"    -- add focused tests when requested"
 Write-Host "  codex-review          -- code review on changed files"
 Write-Host "  codex-security        -- security scan on changed files"
 Write-Host ""

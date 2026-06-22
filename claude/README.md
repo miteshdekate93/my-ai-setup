@@ -16,6 +16,13 @@ Restart Claude Code after running.
 
 ---
 
+## Smart Defaults For Your Stack
+
+Claude rules are tuned for React, Angular, C#/.NET, Azure, SQL Server, Oracle, and low-token agent work. Python/PyPI guidance is not used unless the repo is Python or you ask for it.
+
+Simple prompts still trigger senior-agent behavior: git status, project rules, CONTEXT.md/lessons, L3 SOP recall, GitNexus impact for shared edits, rg/git grep reuse search, smallest safe change, and focused verification.
+
+Reviewed-repo ideas folded in: minimal-safe ladder (Ponytail), CSS/native-first frontend state (prop-for-that), schema-first internal apps (nubase), architecture-as-code cue (LikeC4), and tool/memory reasoning (jcode/ReCall).
 ## What Gets Installed
 
 | Path | What it does |
@@ -56,9 +63,9 @@ These are available in every Claude Code session after setup.
 
 | Command | What it does |
 |---------|-------------|
-| `/task "implement X"` | Full pipeline: detect stack → L3 recall → branch → plan → TDD → implement → review → security → SOP → git output |
+| `/task "implement X"` | Full pipeline: detect stack -> L3 recall -> branch -> plan -> verification -> implement -> review -> security -> SOP -> git output |
 | `/plan "feature X"` | Breakdown: files, before/after, risks, dependencies |
-| `/tdd "logic X"` | Write failing tests first (RED phase) |
+| `/tdd "logic X"` | Add focused tests when requested or needed (RED phase) |
 | `/gitnexus-init` | Index codebase for dependency analysis + impact tracing |
 
 ### BMAD skills
@@ -102,13 +109,6 @@ Install ECC once: `claude mcp install everything-claude-code`
 | `/code-review` | Review changed files: names, errors, logic, edge cases |
 | `/security-scan` | Scan for hardcoded secrets, injection, auth bypasses |
 | `/security-review` | Deep security analysis |
-| `/python-review` | Python-specific code review |
-| `/go-review` | Go-specific code review |
-| `/rust-review` | Rust-specific code review |
-| `/kotlin-review` | Kotlin/Android code review |
-| `/go-build` | Fix Go build/vet errors |
-| `/rust-build` | Fix Rust/Cargo errors |
-| `/kotlin-build` | Fix Kotlin/Gradle errors |
 | `/gradle-build` | Fix Gradle build errors |
 | `/docs` | Update documentation + codemaps |
 | `/prune` | Remove dead code and unused dependencies |
@@ -142,7 +142,7 @@ Install ECC once: `claude mcp install everything-claude-code`
 
 1. **Branch** — `git checkout -b feat/<slug>`
 2. **Plan** — numbered breakdown of changes + risks
-3. **Tests (RED)** — write failing tests, run to confirm failure
+3. **Verification plan** - identify focused checks; add tests only when requested or needed
 4. **Implement (GREEN)** — minimal code to pass tests
 5. **Code review** — stack-aware review agent (auto-selected)
 6. **Security** — conditional scan (skipped for pure logic/UI)
@@ -271,9 +271,9 @@ Every non-trivial `/task` saves a reusable SOP:
 
 ```
 ~/.claude/memory/L3/
-├── node-jwt-auth.md
-├── go-grpc-service.md
-├── python-alembic-migration.md
+├── angular-form-validation.md
+├── dotnet-api-validation.md
+├── sqlserver-safe-migration.md
 └── react-context-state.md
 ```
 

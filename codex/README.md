@@ -14,6 +14,13 @@ bash codex/setup.sh
 
 ---
 
+## Smart Defaults For Your Stack
+
+Codex rules are tuned for React, Angular, C#/.NET, Azure, SQL Server, Oracle, and low-token agent work. Python/PyPI guidance is not used unless the repo is Python or you ask for it.
+
+Simple prompts still trigger senior-agent behavior: git status, project rules, CONTEXT.md/lessons, L3 SOP recall, GitNexus impact for shared edits, rg/git grep reuse search, smallest safe change, and focused verification.
+
+Reviewed-repo ideas folded in: minimal-safe ladder (Ponytail), CSS/native-first frontend state (prop-for-that), schema-first internal apps (nubase), architecture-as-code cue (LikeC4), and tool/memory reasoning (jcode/ReCall).
 ## What Gets Installed
 
 | Path | What it does |
@@ -26,7 +33,7 @@ bash codex/setup.sh
 | GitNexus MCP | Code intelligence MCP server for impact analysis, context, query, and change detection |
 | `~/.local/bin/codex-task` | Full pipeline orchestrator (equivalent to Claude's `/task`) |
 | `~/.local/bin/codex-plan` | Planning only |
-| `~/.local/bin/codex-tdd` | Write failing tests first |
+| `~/.local/bin/codex-tdd` | Add focused tests when requested or needed |
 | `~/.local/bin/codex-review` | Code review on changed files |
 | `~/.local/bin/codex-security` | Security scan on changed files |
 | `./AGENTS.md` | Project-level instructions |
@@ -52,7 +59,7 @@ Equivalent to Claude Code's `/task`. Runs all phases autonomously:
 -1. **Scout + Researcher** (parallel recon) — `context.md` + `external-reference.md`
 1. **Branch** — `git checkout -b feat/<slug>`
 2. **Plan** — numbered breakdown of changes + risks
-3. **Tests (RED)** — write failing tests, run to confirm failure
+3. **Verification plan** - identify focused checks; add tests only when requested or needed
 4. **Implement (GREEN)** — minimal code to pass tests
 5. **Code review** — check names, errors, hardcoded values, edge cases
 6. **Security** — conditional scan (skipped for pure logic/UI)
@@ -66,7 +73,7 @@ codex-plan "add rate limiting to the user API"
 # → numbered breakdown: files, before/after, risks, dependencies
 
 codex-tdd "user can only delete their own posts"
-# → writes failing tests first, runs them to confirm RED
+# -> adds focused tests when requested or needed
 
 codex-review
 # → reviews git-changed files: names, errors, hardcoded values, edge cases
@@ -83,12 +90,12 @@ codex-security
 
 | Detected file | Stack | Review focus |
 |--------------|-------|-------------|
-| `package.json` / `bun.lockb` | Node/TypeScript | TS types, async errors |
-| `go.mod` | Go | goroutine safety, error wrapping |
-| `Cargo.toml` | Rust | ownership, error propagation |
-| `requirements.txt` / `pyproject.toml` | Python | type hints, exception handling |
-| `build.gradle` | Kotlin/Android | null safety, coroutine scope |
-| `pubspec.yaml` | Flutter/Dart | widget lifecycle, null safety |
+| `angular.json` / Angular package | Angular/TypeScript | Angular patterns, RxJS, templates |
+| React/Next/Vite `package.json` | React/TypeScript | component state, hooks, rendering, accessibility |
+| `*.sln` / `*.csproj` | C#/.NET | DI, config, logging, async, validation |
+| `*.sql` / DB migration scripts | SQL Server / Oracle | transaction safety, parameterization, rollback |
+| Azure files (`azure-pipelines.yml`, Bicep, appsettings) | Azure | config, deployment, secrets, environment safety |
+| `package.json` fallback | Node/TypeScript | TS types, async errors |
 
 ### GitHub auth routing
 
@@ -173,9 +180,9 @@ Every non-trivial `codex-task` saves a reusable SOP:
 
 ```
 ~/.codex/memory/L3/
-├── node-jwt-auth.md
-├── go-grpc-service.md
-├── python-db-migration.md
+├── angular-form-validation.md
+├── dotnet-api-validation.md
+├── sqlserver-safe-migration.md
 └── react-context-state.md
 ```
 

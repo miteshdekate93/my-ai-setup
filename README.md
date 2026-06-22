@@ -46,6 +46,21 @@ bash codex/setup.sh
 
 ---
 
+## Smart Defaults For Your Stack
+
+This setup is tuned for React, Angular, C#/.NET, Azure, SQL Server, Oracle, Claude, and Codex work. It avoids Python-first guidance unless a repo is actually Python or you explicitly ask.
+
+Simple prompts still trigger the smarter workflow: check git status, load project rules and lessons, recall L3 memory, use GitNexus for impact, search reuse with rg/git grep, choose the smallest safe implementation, run focused checks, and avoid commit/push unless asked.
+
+Reviewed GitHub ideas folded in:
+
+| Idea | How setup uses it |
+|------|-------------------|
+| Ponytail minimal-safe ladder | Reuse/native/framework first, smallest safe change, no unnecessary packages |
+| prop-for-that | Native browser/CSS-first frontend state before JS render loops |
+| nubase | Schema-first CRUD/admin app thinking before hand-built screens |
+| LikeC4 | Architecture-as-code cue for ADRs/diagrams when architecture changes |
+| jcode/ReCall | Tool evidence, memory recall, and multi-step tool reasoning before claims |
 ## What Each Setup Installs
 
 | What | Claude Code | Codex CLI |
@@ -56,7 +71,7 @@ bash codex/setup.sh
 | Global BMAD skills | `~/.claude/skills/bmad-*` | `~/.codex/skills/bmad-*` |
 | Full pipeline command | `/task` (slash command) | `codex-task` (CLI script) |
 | Planning command | `/plan` (ECC skill) | `codex-plan` |
-| TDD command | `/tdd` (ECC skill) | `codex-tdd` |
+| TDD / focused test command | `/tdd` (when tests requested) | `codex-tdd` |
 | Code review command | `/code-review` (ECC skill) | `codex-review` |
 | Security scan command | `/security-scan` (ECC skill) | `codex-security` |
 | Memory (L3 SOPs) | `~/.claude/memory/L3/` | `~/.codex/memory/L3/` |
@@ -80,7 +95,7 @@ Instead of manually planning, branching, writing tests, implementing, reviewing,
 codex-task "implement JWT authentication"
 ```
 
-Both tools auto-detect your stack, create a branch, write failing tests, implement, review, security-scan, then output git push commands (or push automatically if GitHub is authenticated).
+Both tools auto-detect your stack, create a branch, plan verification, implement, review, security-scan, then output git push commands (or push automatically if GitHub is authenticated).
 
 ### 2. Plan before every feature (saves rework)
 
@@ -98,7 +113,7 @@ codex-plan "add rate limiting to the API"  # Codex
 codex-tdd "user can only delete their own posts"  # Codex
 ```
 
-Writing tests first exposes ambiguity before you write code.
+Run existing focused checks first. Add tests when requested, repo pattern expects it, or bug/high-risk behavior needs regression coverage.
 
 ### 4. WUPHF — 97% cache hit rate, fresh context per agent
 

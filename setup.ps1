@@ -20,6 +20,65 @@ $rulesDir = "$claudeDir\rules"
 New-Item -ItemType Directory -Force -Path $rulesDir | Out-Null
 
 @'
+# Smart Agent Defaults
+
+Even simple prompts run as senior-agent work:
+1. Classify request: question, bug, feature, refactor, review, deploy, data/DB.
+2. Check git status before edits.
+3. Read project instructions, CONTEXT.md, tasks/lessons.md, and relevant L3 SOP memory when present.
+4. Use GitNexus context/impact before shared symbol, API route, DB, or cross-module edits.
+5. Search existing code with rg/git grep before creating helpers, components, services, SQL, or Azure scripts.
+6. Use smallest safe change. Prefer reuse/native platform/config over new abstraction or dependency.
+7. Run focused existing checks. Add tests only when user asks, repo pattern expects it, or bug/high-risk behavior needs regression coverage.
+8. Do not commit or push unless explicitly asked.
+
+If prompt is vague, proceed with safest scoped interpretation and state assumptions. Ask only when missing detail can cause data loss, security issue, or wrong product behavior.
+
+## Minimal Safe Ladder
+
+Before coding: prove need, reuse existing code, use framework/platform, use installed dependency, then add smallest new code.
+Never simplify away validation, authorization, PII/secret safety, SQL injection protection, error handling, accessibility, auditability, or requested behavior.
+
+## Tool And Token Discipline
+
+- Start with GitNexus, rg, git grep, and targeted file reads.
+- Prefer llms.txt, official docs, vendor docs, and compact project docs when available.
+- Batch independent reads/searches.
+- Use tool evidence before root-cause or impact claims.
+- For architecture-heavy work, check existing ADRs/diagrams and ask whether LikeC4/C4/docs should be updated.
+- For CRUD/internal admin apps, prefer schema-first patterns and existing generated/configured UI paths before hand-building screens.
+'@ | Set-Content -Encoding UTF8 "$rulesDir\smart-agent-defaults.md"
+
+@'
+# Technology Focus
+
+Default stack: React, Angular, TypeScript, C#/.NET, ASP.NET Core, Azure DevOps/IIS/App Services/Key Vault/App Configuration, SQL Server, Oracle, and Claude/Codex automation.
+
+Do not propose Python implementations, PyPI packages, or Python scripts unless the repo is already Python or user explicitly asks. For automation prefer PowerShell, Node/TypeScript, C#/.NET CLI, SQL, Azure CLI, or Azure PowerShell.
+
+## Frontend
+- Use native HTML/CSS/browser APIs first.
+- Prefer Angular/React built-in patterns and existing component libraries.
+- Prefer CSS/container queries/custom properties over JavaScript render loops when CSS can express the state.
+- Avoid new npm packages until existing code and installed dependencies are checked.
+
+## Backend .NET
+- Follow existing solution layout, dependency injection, configuration, logging, EF/Dapper/repository patterns, and project naming.
+- Keep changes scoped to the touched feature or service boundary.
+- Use Microsoft docs and NuGet docs for current API behavior.
+
+## Database
+- SQL Server and Oracle are first-class targets.
+- Use parameterized SQL, transaction safety, rollback notes, least-privilege grants, repo migration/script pattern, and PII/secrets protection.
+- Confirm environment/database target before running data-changing SQL.
+
+## Azure
+- Use existing Azure DevOps pipelines, appsettings, Key Vault/App Configuration, IaC, deployment scripts, and operational docs before adding tooling.
+- Prefer Azure CLI/PowerShell and Microsoft docs for cloud actions.
+'@ | Set-Content -Encoding UTF8 "$rulesDir\technology-focus.md"
+
+
+@'
 # Agent Orchestration
 
 ## Available Agents
@@ -37,7 +96,6 @@ Located in `~/.claude/agents/`:
 | e2e-runner | E2E testing | Critical user flows |
 | refactor-cleaner | Dead code cleanup | Code maintenance |
 | doc-updater | Documentation | Updating docs |
-| rust-reviewer | Rust code review | Rust projects |
 | context-pruner | Compress long sessions | When context window gets heavy (10+ turns) |
 | file-picker | Find relevant files in codebase | Before planning, to scope what needs to change |
 | scout | Pre-planning codebase recon | Before planner on any complex feature |
@@ -216,7 +274,7 @@ The Feature Implementation Workflow describes the development pipeline: research
    - **GitHub code search first:** Run `gh search repos` and `gh search code` to find existing implementations, templates, and patterns before writing anything new.
    - **Library docs second:** Use Context7 or primary vendor docs to confirm API behavior, package usage, and version-specific details before implementing.
    - **Exa only when the first two are insufficient:** Use Exa for broader web research or discovery after GitHub search and primary docs.
-   - **Check package registries:** Search npm, PyPI, crates.io, and other registries before writing utility code. Prefer battle-tested libraries over hand-rolled solutions.
+   - **Check package/docs sources:** Search local repo first, then npm, NuGet, Microsoft/Azure docs, Oracle docs, and vendor docs before writing utility code. Use PyPI/crates.io only when repo is explicitly Python/Rust or user asks.
    - **Search for adaptable implementations:** Look for open-source projects that solve 80%+ of the problem and can be forked, ported, or wrapped.
    - Prefer adopting or porting a proven approach over writing net-new code when it meets the requirement.
 
@@ -227,12 +285,11 @@ The Feature Implementation Workflow describes the development pipeline: research
    - Break down into phases
    - Check `CONTEXT.md` for project-specific domain terms and ADRs before planning
 
-2. **TDD Approach**
-   - Use **tdd-guide** agent
-   - Write tests first (RED)
-   - Implement to pass tests (GREEN)
-   - Refactor (IMPROVE)
-   - Verify 80%+ coverage
+2. **Testing And Verification**
+   - Run focused existing checks by default
+   - Add tests only when user asks, repo pattern expects it, or bug/high-risk behavior needs regression coverage
+   - Keep the existing test framework and naming pattern
+   - Report any verification gap clearly
 
 3. **Code Review**
    - Use **code-reviewer** agent immediately after writing code (spawn fresh — no session history)
@@ -431,35 +488,21 @@ If security issue found:
 '@ | Set-Content -Encoding UTF8 "$rulesDir\security.md"
 
 @'
-# Testing Requirements
+# Testing And Verification
 
-## Minimum Test Coverage: 80%
+Default: run existing relevant checks. Do not create new unit, integration, or E2E tests unless the user asks, the repository already has a matching pattern for the touched behavior, or a bug/high-risk change needs regression coverage.
 
-Test Types (ALL required):
-1. **Unit Tests** - Individual functions, utilities, components
-2. **Integration Tests** - API endpoints, database operations
-3. **E2E Tests** - Critical user flows (framework chosen per language)
+When adding tests:
+1. Use the repo's existing test framework and naming style.
+2. Keep tests focused on changed behavior.
+3. Cover the failing case first for bugs.
+4. Avoid broad test rewrites.
 
-## Test-Driven Development
-
-MANDATORY workflow:
-1. Write test first (RED)
-2. Run test - it should FAIL
-3. Write minimal implementation (GREEN)
-4. Run test - it should PASS
-5. Refactor (IMPROVE)
-6. Verify coverage (80%+)
-
-## Troubleshooting Test Failures
-
-1. Use **tdd-guide** agent
-2. Check test isolation
-3. Verify mocks are correct
-4. Fix implementation, not tests (unless tests are wrong)
+When not adding tests, run the best available focused build/test/smoke command and report the verification gap.
 
 ## Agent Support
 
-- **tdd-guide** - Use PROACTIVELY for new features, enforces write-tests-first
+- Use tdd-guide only when adding tests or when user asks for TDD.
 '@ | Set-Content -Encoding UTF8 "$rulesDir\testing.md"
 
 @'
@@ -585,7 +628,7 @@ Every 10 tool-use turns: assess context bloat.
 - Never mark a task complete without proving it works
 - Diff behavior between main and your changes when relevant
 - Ask yourself: "Would a staff engineer approve this?"
-- Run tests, check logs, demonstrate correctness
+- Run focused checks, inspect logs when relevant, demonstrate correctness
 
 ## 5. Demand Elegance (Balanced)
 - For non-trivial changes: pause and ask "is there a more elegant way?"
@@ -698,7 +741,7 @@ When implementing features, use these ECC agents to keep code readable:
 **Why:** Tests = executable documentation. Forces you to think clearly.
 
 Workflow:
-1. Write failing test (RED)
+1. Identify focused check/regression need (5 min)
 2. Implement minimal code (GREEN)
 3. Refactor for clarity (IMPROVE)
 4. Verify 80%+ coverage
@@ -733,8 +776,8 @@ Catches:
 ```
 1. /plan "Build feature"          (10 min)  → Clear breakdown
 2. Read plan aloud to yourself     (5 min)  → If confused, re-plan
-3. /tdd "Logic test"               (45 min) → Tests force clarity
-4. Implement minimal code          (30 min) → Just make tests pass
+3. /task "implement X"              -> verification + implementation
+4. Implement minimal scoped code       -> verify focused checks
 5. /code-review                    (10 min) → Catch issues early
 6. /security-scan (if needed)      (5 min)  → Verify safety
 7. Submit                          (5 min)
@@ -743,7 +786,7 @@ Catches:
 ## Bug Fix (30 min)
 ```
 1. /plan "Reproduce bug, plan fix" (5 min)
-2. Write failing test              (5 min)
+2. Identify focused check/regression need (5 min)
 3. Fix code                        (15 min)
 4. /code-review                    (5 min)
 5. Submit
@@ -1022,12 +1065,11 @@ Check current dir + parents for these files:
 
 | File | Stack | Review agent for Phase 5 |
 |------|-------|--------------------------|
-| package.json / bun.lockb / deno.json | Node/TypeScript | /typescript-review |
-| go.mod | Go | /go-review |
-| Cargo.toml | Rust | /rust-review |
-| requirements.txt / pyproject.toml / setup.py | Python | /python-review |
-| build.gradle / settings.gradle | Kotlin/Android | /kotlin-review |
-| pubspec.yaml | Flutter/Dart | /flutter-dart-code-review |
+| angular.json or Angular package | Angular/TypeScript | /typescript-review |
+| React/Next/Vite package.json | React/TypeScript | /typescript-review |
+| *.sln / *.csproj | C#/.NET | manual .NET review |
+| *.sql / DB migration scripts | SQL Server / Oracle | DB safety review |
+| azure-pipelines.yml / Bicep / appsettings | Azure | deployment/config review |
 | None detected | Generic | manual review |
 
 Store detected stack — auto-invoke matching agent in Phase 5.
@@ -1083,17 +1125,16 @@ git checkout -b <type>/<short-slug>
 What files change and why. Before vs after. How to verify. Risks.
 Write numbered list. Show it. Confirm before proceeding.
 
-### Phase 3 — Tests First (RED)
-Write failing tests. Run them — must FAIL before implementation.
+### Phase 3 - Verification Plan
+Identify focused existing checks. Add tests only when user asked, repo pattern expects it, or bug/high-risk behavior needs regression coverage.
 
 ### Phase 4 — Implement (GREEN)
-Minimal code to pass tests. Functions <=20 lines, immutable, explicit error handling.
-Run tests — all must pass before continuing.
+Minimal scoped code. Functions <=20 lines, immutable, explicit error handling.
+Run focused build/test/smoke checks before continuing.
 
 ### Phase 5 — Code Review (stack-aware)
 Use agent detected in Step 0:
-- Node/TS -> /typescript-review | Go -> /go-review | Rust -> /rust-review
-- Python -> /python-review | Kotlin -> /kotlin-review | Flutter -> /flutter-dart-code-review
+- Angular/React -> /typescript-review | C#/.NET -> .NET review | SQL/Oracle -> DB safety review | Azure -> deployment/config review
 - Unknown -> manual review
 
 Check: unclear names, missing error handling, hardcoded values, logic errors.
