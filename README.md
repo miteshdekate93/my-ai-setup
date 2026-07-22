@@ -54,13 +54,20 @@ Simple prompts still trigger the smarter workflow: check git status, load projec
 
 Reviewed GitHub ideas folded in:
 
-| Idea | How setup uses it |
-|------|-------------------|
+| Idea/tool | How setup uses it |
+|-----------|-------------------|
 | Ponytail minimal-safe ladder | Reuse/native/framework first, smallest safe change, no unnecessary packages |
 | prop-for-that | Native browser/CSS-first frontend state before JS render loops |
-| nubase | Schema-first CRUD/admin app thinking before hand-built screens |
+| nubase / Nub | Schema-first CRUD/admin thinking; optional Node/TypeScript command acceleration when compatible |
 | LikeC4 | Architecture-as-code cue for ADRs/diagrams when architecture changes |
 | jcode/ReCall | Tool evidence, memory recall, and multi-step tool reasoning before claims |
+| Rowboat | Local-first, inspectable Markdown memory and project knowledge graph habits |
+| Engram | Optional indexed MCP memory: search previous lessons before planning, save compact learnings after work |
+| Firecrawl | Optional LLM-ready web context: clean Markdown/structured extraction for current docs/pages |
+| no-mistakes | Optional push gate: isolated validation before branch/PR reaches origin |
+| Herdr / Orca | Optional fleet mode: parallel agents in terminals/worktrees only for complex independent work |
+| AirLLM | Not adopted by default; Python/model-inference focus does not match daily stack |
+
 ## What Each Setup Installs
 
 | What | Claude Code | Codex CLI |
@@ -75,9 +82,9 @@ Reviewed GitHub ideas folded in:
 | Code review command | `/code-review` (ECC skill) | `codex-review` |
 | Security scan command | `/security-scan` (ECC skill) | `codex-security` |
 | Memory (L3 SOPs) | `~/.claude/memory/L3/` | `~/.codex/memory/L3/` |
-| Cross-session memory | Stash MCP (`~/.stash/`) | Stash MCP (`~/.stash/`) |
-| Multi-agent / cache | WUPHF (`npx wuphf`) — Five-Role system + Oracle | WUPHF (with Claude Code) |
-| Workflow engine | Archon CLI (auto-dispatched) | built-in 8-phase pipeline |
+| Cross-session memory | Stash MCP (`~/.stash/`) + optional Engram | Stash MCP (`~/.stash/`) + optional Engram |
+| Multi-agent / cache | WUPHF (`npx wuphf`) + optional Herdr/Orca | WUPHF pattern + optional Herdr/Orca |
+| Workflow engine | Archon CLI (auto-dispatched), optional no-mistakes push gate | built-in 8-phase pipeline, optional no-mistakes push gate |
 
 ---
 
@@ -218,6 +225,11 @@ codex-task "implement <first feature>"      # Codex
 | GitHub CLI | `brew install gh` (optional — enables auto-push + PR) |
 | Archon CLI | auto-installed by `claude/setup.sh` |
 | Node.js 18+ | required for both CLIs |
+| Nub | optional Node/TypeScript speed tool; use only when compatible with repo scripts |
+| Engram | optional indexed memory MCP/plugin |
+| Firecrawl | optional real-time web context MCP/skill; requires API key |
+| no-mistakes | optional push/PR validation gate |
+| Herdr / Orca | optional agent fleet/worktree orchestration |
 
 ---
 

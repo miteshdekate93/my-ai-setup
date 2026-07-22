@@ -230,6 +230,30 @@ Never simplify away validation, authorization, PII/secret safety, SQL injection 
 - For architecture-heavy work, check existing ADRs/diagrams and ask whether LikeC4/C4/docs should be updated.
 - For CRUD/internal admin apps, prefer schema-first patterns and existing generated/configured UI paths before hand-building screens.
 
+# Agent Memory And External Context
+
+Use memory and external context only when it improves accuracy or reduces repeated reasoning:
+- Local Markdown remains source of truth: `CONTEXT.md`, `tasks/lessons.md`, `~/.codex/memory/L2/`, `~/.codex/memory/L3/`.
+- If Engram MCP/tools exist, run memory search/context at task start and save compact findings at task end. Use it as indexed recall, not hidden authority.
+- If Firecrawl/MCP/tools exist and current web docs are needed, prefer clean Markdown/structured extraction over raw browser copy. Store source URL + date in notes.
+- For external docs, prefer official/vendor docs first; use broader web only when vendor docs are incomplete.
+- Never paste large scraped output into prompt. Extract only exact API, command, version, error, or decision evidence needed.
+
+# Agent Fleet And Push Gate
+
+Use fleet tools only for work that benefits from parallelism:
+- Herdr/Orca pattern: run independent agents in separate terminals/worktrees, compare outputs, merge only winner-quality changes.
+- Keep one writer per file/worktree. Parallel readers/reviewers OK; parallel writers need isolated branches/worktrees.
+- Use no-mistakes-style gate before push when available and user asks to push: review, tests, docs/lint, PR body, CI follow-up before branch reaches origin.
+- For simple <=2-file edits, stay inline. Fleet orchestration costs more than it saves.
+
+# Node And Frontend Speed
+
+For React/Angular/TypeScript repos:
+- Use repo package manager and scripts first (`npm`, `pnpm`, `yarn`, Nx, Angular CLI, Vite, MSBuild integration).
+- If Nub is installed, use it only as compatible acceleration (`nub run`, `nubx`, `nub watch`) after confirming repo scripts still behave the same.
+- Do not replace project runtime, lockfile, or CI toolchain without explicit approval.
+
 ---
 # Development Workflow
 
@@ -801,6 +825,38 @@ mkdir -p "$HOME/.codex/memory/L2"
 mkdir -p "$HOME/.codex/memory/L3"
 echo "Memory directories created: ~/.codex/memory/L2/ and ~/.codex/memory/L3/"
 
+
+# Optional agent accelerators (detect only; no surprise installs)
+mkdir -p "$HOME/.codex/tools"
+cat > "$HOME/.codex/tools/agent-accelerators.md" << 'EOF'
+# Optional Agent Accelerators
+
+These tools are not required. Use them only when installed/configured and useful for the current task.
+
+| Tool | Use | Codex behavior |
+|------|-----|----------------|
+| Engram | Indexed persistent memory over SQLite/FTS5 via MCP | Search at task start, save compact task learnings at end |
+| Firecrawl | LLM-ready web search/scrape/MCP | Pull current docs/pages as clean Markdown/structured evidence |
+| Nub | Faster Node/TypeScript commands | Use `nub run`/`nubx` only when compatible with repo scripts |
+| no-mistakes | Pre-push validation gate | Use before push/PR when user asks to push and repo is initialized |
+| Herdr | Terminal agent multiplexer | Coordinate long-running agent panes without losing state |
+| Orca | Parallel agent worktrees | Fan out complex work into isolated worktrees and compare results |
+| Rowboat pattern | Local-first knowledge graph | Keep project memory inspectable in Markdown |
+
+Skipped by default: AirLLM. It is model-inference/Python-focused, not daily React/Angular/.NET/Azure/SQL/Oracle coding setup.
+EOF
+
+if command -v engram >/dev/null 2>&1; then
+  echo "Engram detected. To wire Codex memory MCP, run once: engram setup codex"
+else
+  echo "Engram not installed (optional indexed memory)."
+fi
+for tool in firecrawl nub no-mistakes herdr orca; do
+  if command -v "$tool" >/dev/null 2>&1; then
+    echo "Optional accelerator detected: $tool"
+  fi
+done
+
 # Global BMAD Codex skills
 BMAD_SOURCE="$SCRIPT_DIR/skills"
 BMAD_TARGET="$HOME/.codex/skills"
@@ -892,6 +948,10 @@ Follow ALL phases below without asking for confirmation between them:
 - Search existing code with rg/git grep before creating helpers/components/services.
 - Prefer React, Angular, C#/.NET, Azure, SQL Server, and Oracle patterns. Do not propose Python unless this repo is Python or user asks.
 - Use native/platform/CSS/framework features before new dependencies.
+- If Engram memory tools are available, search before planning and save compact task learning at the end.
+- If Firecrawl tools are available and current web docs are needed, retrieve only clean Markdown/structured evidence with source URLs.
+- If Nub is available in React/Angular/TypeScript repos, use it only as compatible command acceleration after confirming repo scripts.
+- If Herdr/Orca/no-mistakes are available, use them for long parallel work or push-gated PRs only when the task warrants it.
 - If you see a better improvement outside scope, mention it and continue requested scope unless user approves expansion.
 
 ## Phase 1 — Branch
@@ -1117,7 +1177,7 @@ services:
     volumes:
       - stash_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U stash"]
+      test: ["CMD-SHELL', "pg_isready -U stash"]
       interval: 5s
       timeout: 5s
       retries: 5

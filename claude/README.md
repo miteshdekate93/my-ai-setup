@@ -116,6 +116,22 @@ Install ECC once: `claude mcp install everything-claude-code`
 
 ---
 
+
+## Optional Accelerators
+
+These are used only when installed/configured. They are not required for normal Claude Code work.
+
+| Tool | When to use | Claude rule |
+|------|-------------|-------------|
+| Engram | Repeated project/domain work | Search indexed memory before planning; save compact findings after non-trivial tasks |
+| Firecrawl | Current external docs/pages | Pull clean Markdown/structured evidence with source URLs; avoid raw page dumps |
+| Nub | React/Angular/TypeScript command speed | Use `nub run`/`nubx` only when compatible with existing package scripts |
+| no-mistakes | User asks to push/PR | Gate push through isolated validation when repo initialized |
+| Herdr / Orca | Long parallel coding/review | Use separate terminals/worktrees; one writer per file |
+| Rowboat pattern | Project knowledge | Keep memory local, Markdown, inspectable |
+
+AirLLM skipped by default because it is Python/model-inference focused, not daily Claude coding setup for React/Angular/.NET/Azure/SQL/Oracle.
+
 ## How `/task` Works
 
 `/task` is the single command that replaces the entire dev workflow.

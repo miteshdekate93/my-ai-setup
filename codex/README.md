@@ -84,6 +84,22 @@ codex-security
 
 ---
 
+
+## Optional Accelerators
+
+These are used only when installed/configured. They are not required for normal Codex work.
+
+| Tool | When to use | Codex rule |
+|------|-------------|------------|
+| Engram | Repeated project/domain work | Search indexed memory before planning; save compact findings after non-trivial tasks |
+| Firecrawl | Current external docs/pages | Pull clean Markdown/structured evidence with source URLs; avoid raw page dumps |
+| Nub | React/Angular/TypeScript command speed | Use `nub run`/`nubx` only when compatible with existing package scripts |
+| no-mistakes | User asks to push/PR | Gate push through isolated validation when repo initialized |
+| Herdr / Orca | Long parallel coding/review | Use separate terminals/worktrees; one writer per file |
+| Rowboat pattern | Project knowledge | Keep memory local, Markdown, inspectable |
+
+AirLLM skipped by default because it is Python/model-inference focused, not daily Codex coding setup for React/Angular/.NET/Azure/SQL/Oracle.
+
 ## How `codex-task` Works
 
 ### Stack detection (automatic)

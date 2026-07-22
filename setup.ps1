@@ -11,7 +11,7 @@ New-Item -ItemType Directory -Force -Path $claudeDir | Out-Null
 @'
 {
   "voiceEnabled": true,
-  "disabledMcpServers": ["railway", "vercel"]
+  "disabledMcpServers": ["railway', "vercel"]
 }
 '@ | Set-Content -Encoding UTF8 "$claudeDir\settings.json"
 
@@ -47,6 +47,29 @@ Never simplify away validation, authorization, PII/secret safety, SQL injection 
 - Use tool evidence before root-cause or impact claims.
 - For architecture-heavy work, check existing ADRs/diagrams and ask whether LikeC4/C4/docs should be updated.
 - For CRUD/internal admin apps, prefer schema-first patterns and existing generated/configured UI paths before hand-building screens.
+## Agent Memory And External Context
+
+Use memory and external context only when it improves accuracy or reduces repeated reasoning:
+- Local Markdown remains source of truth: `CONTEXT.md`, `tasks/lessons.md`, `~/.claude/memory/L2/`, `~/.claude/memory/L3/`.
+- If Engram MCP/plugin tools exist, run memory search/context at task start and save compact findings at task end. Use it as indexed recall, not hidden authority.
+- If Firecrawl/MCP/tools exist and current web docs are needed, prefer clean Markdown/structured extraction over raw browser copy. Store source URL + date in notes.
+- For external docs, prefer official/vendor docs first; use broader web only when vendor docs are incomplete.
+- Never paste large scraped output into prompt. Extract only exact API, command, version, error, or decision evidence needed.
+
+## Agent Fleet And Push Gate
+
+Use fleet tools only for work that benefits from parallelism:
+- Herdr/Orca pattern: run independent agents in separate terminals/worktrees, compare outputs, merge only winner-quality changes.
+- Keep one writer per file/worktree. Parallel readers/reviewers OK; parallel writers need isolated branches/worktrees.
+- Use no-mistakes-style gate before push when available and user asks to push: review, tests, docs/lint, PR body, CI follow-up before branch reaches origin.
+- For simple <=2-file edits, stay inline. Fleet orchestration costs more than it saves.
+
+## Node And Frontend Speed
+
+For React/Angular/TypeScript repos:
+- Use repo package manager and scripts first (`npm`, `pnpm`, `yarn`, Nx, Angular CLI, Vite, MSBuild integration).
+- If Nub is installed, use it only as compatible acceleration (`nub run`, `nubx`, `nub watch`) after confirming repo scripts still behave the same.
+- Do not replace project runtime, lockfile, or CI toolchain without explicit approval.
 '@ | Set-Content -Encoding UTF8 "$rulesDir\smart-agent-defaults.md"
 
 @'
@@ -990,13 +1013,13 @@ Archon runs in isolated git worktrees, handles plan -> implement -> validate -> 
 
 | User Says | Archon Workflow | Branch Pattern |
 |-----------|----------------|----------------|
-| "implement X", "build X", "create feature" | `archon-idea-to-pr` | `feat/{short-name}` |
-| "fix issue #N", "resolve issue" | `archon-fix-github-issue` | `fix/issue-{N}` |
-| "fix bug in X", "debug X" (needs investigation) | `archon-fix-github-issue` | `fix/{short-name}` |
-| "implement from plan", "execute this plan" | `archon-feature-development` | `feat/{short-name}` |
+| "implement X', "build X', "create feature" | `archon-idea-to-pr` | `feat/{short-name}` |
+| "fix issue #N', "resolve issue" | `archon-fix-github-issue` | `fix/issue-{N}` |
+| "fix bug in X', "debug X" (needs investigation) | `archon-fix-github-issue` | `fix/{short-name}` |
+| "implement from plan', "execute this plan" | `archon-feature-development` | `feat/{short-name}` |
 | "refactor X" | `archon-refactor-safely` | `refactor/{short-name}` |
 | "review PR #N" | `archon-comprehensive-pr-review` | `review/pr-{N}` |
-| "create a PRD", "plan this feature" | `archon-interactive-prd` | `prd/{short-name}` |
+| "create a PRD', "plan this feature" | `archon-interactive-prd` | `prd/{short-name}` |
 
 ## Skip Archon When
 
@@ -1166,6 +1189,39 @@ Always output these commands even if GitHub is authenticated.
 New-Item -ItemType Directory -Force -Path "$claudeDir\memory\L3" | Out-Null
 Write-Host "L3 memory directory created: $claudeDir\memory\L3"
 
+
+# Optional agent accelerators (detect only; no surprise installs)
+$acceleratorGuide = @(
+    '# Optional Agent Accelerators',
+    '',
+    'These tools are not required. Use them only when installed/configured and useful for the current task.',
+    '',
+    '| Tool | Use | Claude behavior |',
+    '|------|-----|-----------------|',
+    '| Engram | Indexed persistent memory over SQLite/FTS5 via MCP/plugin | Search at task start, save compact task learnings at end |',
+    '| Firecrawl | LLM-ready web search/scrape/MCP | Pull current docs/pages as clean Markdown/structured evidence |',
+    '| Nub | Faster Node/TypeScript commands | Use `nub run`/`nubx` only when compatible with repo scripts |',
+    '| no-mistakes | Pre-push validation gate | Use before push/PR when user asks to push and repo is initialized |',
+    '| Herdr | Terminal agent multiplexer | Coordinate long-running agent panes without losing state |',
+    '| Orca | Parallel agent worktrees | Fan out complex work into isolated worktrees and compare results |',
+    '| Rowboat pattern | Local-first knowledge graph | Keep project memory inspectable in Markdown |',
+    '',
+    'Skipped by default: AirLLM. It is model-inference/Python-focused, not daily React/Angular/.NET/Azure/SQL/Oracle coding setup.'
+)
+$acceleratorGuide | Set-Content -Encoding UTF8 "$rulesDir\agent-accelerators.md"
+Write-Host "Optional accelerator rule created: $rulesDir\agent-accelerators.md"
+
+$engramCmd = Get-Command engram -ErrorAction SilentlyContinue
+if ($engramCmd) {
+    Write-Host "Engram detected. For Claude Code plugin, run once: claude plugin marketplace add Gentleman-Programming/engram; claude plugin install engram"
+} else {
+    Write-Host "Engram not installed (optional indexed memory)."
+}
+foreach ($tool in @("firecrawl", "nub", "no-mistakes", "herdr", "orca")) {
+    if (Get-Command $tool -ErrorAction SilentlyContinue) {
+        Write-Host "Optional accelerator detected: $tool"
+    }
+}
 # Global BMAD Claude skills
 $bmadSourceCandidates = @(
     (Join-Path $PSScriptRoot "claude\skills"),
