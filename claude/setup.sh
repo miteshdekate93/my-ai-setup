@@ -65,6 +65,13 @@ Use fleet tools only for work that benefits from parallelism:
 - Use no-mistakes-style gate before push when available and user asks to push: review, tests, docs/lint, PR body, CI follow-up before branch reaches origin.
 - For simple <=2-file edits, stay inline. Fleet orchestration costs more than it saves.
 
+## Exo Harness (Opt-in Sidecar)
+
+- Exo is a separate long-running agent runtime with its own API key, Docker sandbox, scheduler, and durable state. It is not a Claude Code plugin.
+- Use Exo only for user-approved scheduled research, monitoring, or sandboxed experiments. Keep normal repository changes, reviews, and verification in Claude Code.
+- Keep Exo in an isolated clone. Do not auto-install it, share global Claude configuration, or let it rewrite this setup repository.
+- Default deny repository writes, Git/cloud credentials, production secrets, and external side effects. Validate Exo output in Claude Code before promotion.
+
 ## Node And Frontend Speed
 
 For React/Angular/TypeScript repos:
@@ -1643,8 +1650,10 @@ These tools are not required. Use them only when installed/configured and useful
 | Herdr | Terminal agent multiplexer | Coordinate long-running agent panes without losing state |
 | Orca | Parallel agent worktrees | Fan out complex work into isolated worktrees and compare results |
 | Rowboat pattern | Local-first knowledge graph | Keep project memory inspectable in Markdown |
+| Exo | Long-running agent sidecar with scheduler and durable event state | Use only for approved, isolated research/monitoring; validate output in Claude Code |
 
 Skipped by default: AirLLM. It is model-inference/Python-focused, not daily React/Angular/.NET/Azure/SQL/Oracle coding setup.
+Exo is not installed by setup. It has separate Docker, API-key, and state boundaries.
 EOF
 
 echo "Optional accelerator rule created: ~/.claude/rules/agent-accelerators.md"

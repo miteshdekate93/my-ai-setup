@@ -66,6 +66,7 @@ Reviewed GitHub ideas folded in:
 | Firecrawl | Optional LLM-ready web context: clean Markdown/structured extraction for current docs/pages |
 | no-mistakes | Optional push gate: isolated validation before branch/PR reaches origin |
 | Herdr / Orca | Optional fleet mode: parallel agents in terminals/worktrees only for complex independent work |
+| Exo | Optional, isolated long-running agent sidecar for user-approved scheduled research, monitoring, and sandbox experiments |
 | AirLLM | Not adopted by default; Python/model-inference focus does not match daily stack |
 
 ## What Each Setup Installs
@@ -230,6 +231,23 @@ codex-task "implement <first feature>"      # Codex
 | Firecrawl | optional real-time web context MCP/skill; requires API key |
 | no-mistakes | optional push/PR validation gate |
 | Herdr / Orca | optional agent fleet/worktree orchestration |
+
+---
+
+## Exo Harness - Opt-in Durable Sidecar
+
+[Exo](https://github.com/exoharness/exo) adds a separate long-running agent runtime: its own Docker sandbox, API-key-backed model access, scheduler, adapters, and durable event history. It does not replace Codex or Claude Code.
+
+Use it only where current setup has a gap: user-approved scheduled research, monitoring, or sandbox experiments that must survive a normal coding session. Keep code changes, reviews, GitNexus impact checks, and focused verification in Codex or Claude Code.
+
+| Runtime | Owns |
+|---------|------|
+| Codex / Claude Code | Repository work, review, validation, project rules, L2/L3 memory |
+| Exo | Isolated long-running sidecar work with explicit scope and human review |
+
+Exo is intentionally **not** installed by these setup scripts. Upstream Quick Start is Bash-based and requires Git, Docker, plus an OpenAI or OpenRouter API key. On Windows, use a separate WSL2 and Docker Desktop environment only after reviewing upstream setup and confirming network exposure, persistent-state location, and cost limits.
+
+Start Exo without repository write access, Git/cloud credentials, production secrets, or autonomous external actions. Promote any output through Codex or Claude Code review. Keep its clone and state separate from Codex/Claude global directories and this setup repository.
 
 ---
 

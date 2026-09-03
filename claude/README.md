@@ -129,8 +129,15 @@ These are used only when installed/configured. They are not required for normal 
 | no-mistakes | User asks to push/PR | Gate push through isolated validation when repo initialized |
 | Herdr / Orca | Long parallel coding/review | Use separate terminals/worktrees; one writer per file |
 | Rowboat pattern | Project knowledge | Keep memory local, Markdown, inspectable |
+| Exo | Long-running research, monitoring, sandbox experiments | Use as an isolated, user-approved sidecar; validate results in Claude Code |
 
 AirLLM skipped by default because it is Python/model-inference focused, not daily Claude coding setup for React/Angular/.NET/Azure/SQL/Oracle.
+
+### Exo Boundary
+
+[Exo](https://github.com/exoharness/exo) is not a Claude Code plugin and is not installed by this setup. It has its own Docker sandbox, API key, scheduler, and durable state. Use it only for user-approved long-running sidecar work; keep repository edits, GitNexus impact checks, review, and verification in Claude Code.
+
+Upstream Quick Start is Bash-based and requires Git, Docker, and an OpenAI or OpenRouter API key. On Windows, use a separate WSL2 + Docker Desktop environment after reviewing its setup. Start with no repository write access, Git/cloud credentials, production secrets, or autonomous external actions.
 
 ## How `/task` Works
 
