@@ -11,7 +11,7 @@ New-Item -ItemType Directory -Force -Path $claudeDir | Out-Null
 @'
 {
   "voiceEnabled": true,
-  "disabledMcpServers": ["railway', "vercel"]
+  "disabledMcpServers": ["railway", "vercel"]
 }
 '@ | Set-Content -Encoding UTF8 "$claudeDir\settings.json"
 

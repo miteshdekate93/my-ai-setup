@@ -1,4 +1,4 @@
-# Claude Code Setup Script for Windows
+﻿# Claude Code Setup Script for Windows
 # Run in PowerShell as Administrator.
 # Usage: .\setup.ps1
 
@@ -11,7 +11,7 @@ New-Item -ItemType Directory -Force -Path $claudeDir | Out-Null
 @'
 {
   "voiceEnabled": true,
-  "disabledMcpServers": ["railway', "vercel"]
+  "disabledMcpServers": ["railway", "vercel"]
 }
 '@ | Set-Content -Encoding UTF8 "$claudeDir\settings.json"
 
@@ -1703,7 +1703,7 @@ services:
     volumes:
       - stash_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL', "pg_isready -U stash"]
+      test: ["CMD-SHELL", "pg_isready -U stash"]
       interval: 5s
       timeout: 5s
       retries: 5

@@ -13,7 +13,7 @@ mkdir -p "$HOME/.claude"
 cat > "$HOME/.claude/settings.json" << 'EOF'
 {
   "voiceEnabled": true,
-  "disabledMcpServers": ["railway', "vercel"]
+  "disabledMcpServers": ["railway", "vercel"]
 }
 EOF
 
