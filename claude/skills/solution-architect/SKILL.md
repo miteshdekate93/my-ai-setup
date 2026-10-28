@@ -32,7 +32,9 @@ Workflow backbone adapted from `architecture-designer` (Jeffallan/claude-skills,
 
 ## Modes
 
-Pick the mode from the request; state it in one line.
+The user will not name a mode. Infer it from the request, state it in one line ("Mode: Review"), and proceed. Do not ask the user to choose. Signals: "design/build/propose/architect" -> Design; "review/critique/assess/is this OK/what's wrong" -> Review; "X vs Y/which/should we use" -> Decide; "move/migrate/modernize/upgrade/lift" -> Migrate; "cost/size/how much/effort/capacity" -> Estimate. Mixed requests: run the modes in order (e.g. Decide then Design). Unclear: default to Design and list assumptions, or ask one question if a wrong guess would waste real effort.
+
+Works in any folder, with or without a repo. If a repo exists, read it for facts first. If none, work from the prompt and any pasted/linked material. Keep output in chat unless the user asks for files; then write to the current folder (`docs/architecture/`, `docs/adr/`) and say where. Needs no per-project setup; BMAD skills are optional extras.
 
 | Mode | Trigger | Output |
 |------|---------|--------|

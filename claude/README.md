@@ -387,8 +387,8 @@ Installed globally by the setup script into `~/.claude/skills`:
 | `solution-architect` | Custom principal solution architect: design, review, decide, migrate, estimate. Azure/.NET/Angular-React/SQL Server-Oracle defaults, options matrix, cost/security/ops checks, ADRs, C4 Mermaid |
 | `architecture-designer`, `microservices-architect`, `cloud-architect` | Copied from [Jeffallan/claude-skills](https://github.com/Jeffallan/claude-skills) (MIT, see `skills/THIRD_PARTY_LICENSE_Jeffallan_claude-skills.txt`) |
 
-Use: `/solution-architect <what you need>`, or just ask to "design", "review architecture", or "compare options". BMAD skills (`bmad-agent-architect`, `bmad-technical-research`, `bmad-review-adversarial-general`) complement it.
+Global, works in any folder, no per-project setup. It picks the mode (design, review, decide, migrate, estimate) from your prompt. Use: `/solution-architect <what you need>`, or just ask to "design", "review architecture", or "compare options". BMAD skills (`bmad-agent-architect`, `bmad-technical-research`, `bmad-review-adversarial-general`) complement it.
 
-### BMAD runtime (per project)
+### BMAD runtime (optional, per project)
 
-BMAD v6 skills expect `{project}/_bmad/` config and Python scripts. Prereqs: Node 20.12+, Python 3.10+ (`python3` on PATH), `uv`. In each project run `npx bmad-method install`. v7 is alpha upstream; stay on v6.x.
+Not needed for `solution-architect`. BMAD v6 skills expect `{project}/_bmad/` config and Python scripts. Prereqs: Node 20.12+, Python 3.10+ (`python3` on PATH), `uv`. In each project run `npx bmad-method install`. v7 is alpha upstream; stay on v6.x.
