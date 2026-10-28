@@ -1594,7 +1594,8 @@ New-Item -ItemType Directory -Force -Path $bmadTarget | Out-Null
 if (Test-Path -LiteralPath $bmadSource) {
     $bmadTargetRoot = (Resolve-Path -LiteralPath $bmadTarget).Path
     $bmadCount = 0
-    Get-ChildItem -LiteralPath $bmadSource -Directory -Filter "bmad-*" | ForEach-Object {
+    # Installs bmad-* plus architect skills (solution-architect, architecture-designer, microservices-architect, cloud-architect)
+    Get-ChildItem -LiteralPath $bmadSource -Directory | ForEach-Object {
         $targetPath = Join-Path $bmadTargetRoot $_.Name
         if (-not $targetPath.StartsWith($bmadTargetRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
             throw "Unsafe BMAD skill target: $targetPath"

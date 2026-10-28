@@ -1677,13 +1677,13 @@ if [ -d "$BMAD_SOURCE" ]; then
   while IFS= read -r skill_dir; do
     skill_name="$(basename "$skill_dir")"
     case "$skill_name" in
-      bmad-*) ;;
-      *) echo "Unsafe BMAD skill name: $skill_name"; exit 1 ;;
+      bmad-*|solution-architect|architecture-designer|microservices-architect|cloud-architect) ;;
+      *) echo "Unsafe skill name: $skill_name"; exit 1 ;;
     esac
     rm -rf "$BMAD_TARGET/$skill_name"
     cp -R "$skill_dir" "$BMAD_TARGET/"
     BMAD_COUNT=$((BMAD_COUNT + 1))
-  done < <(find "$BMAD_SOURCE" -mindepth 1 -maxdepth 1 -type d -name 'bmad-*' | sort)
+  done < <(find "$BMAD_SOURCE" -mindepth 1 -maxdepth 1 -type d | sort)
   echo "BMAD Claude skills installed globally: $BMAD_COUNT skills -> $BMAD_TARGET"
 else
   echo "Warning: BMAD skill source not found: $BMAD_SOURCE"
